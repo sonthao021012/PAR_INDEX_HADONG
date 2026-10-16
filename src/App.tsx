@@ -9,6 +9,7 @@ import { DashboardSummary } from './components/DashboardSummary.tsx';
 import { CriteriaTable } from './components/CriteriaTable.tsx';
 import { CriterionDetailModal } from './components/CriterionDetailModal.tsx';
 import { GoogleDriveIntegrationModal } from './components/GoogleDriveIntegrationModal.tsx';
+import { DriveEvidenceHubModal } from './components/DriveEvidenceHubModal.tsx';
 import { ReportExportModal } from './components/ReportExportModal.tsx';
 import { EvidencePreviewModal } from './components/EvidencePreviewModal.tsx';
 import { HelpModal } from './components/HelpModal.tsx';
@@ -18,6 +19,7 @@ import { INITIAL_CCHC_SECTIONS } from './data/cchcDataset.ts';
 import { CCHCSection, CCHCSubCriterion, GASConfig, EvidenceFile, ChangeLogEntry } from './types/cchc.ts';
 import { calculateOverallEvaluation, validateCriterionScore } from './utils/cchcRules.ts';
 import { sendGasRequest, getGasData, saveToLocalServerStore, loadFromLocalServerStore } from './services/gasClient.ts';
+import { saveToFirebase, loadFromFirebase, subscribeToFirebaseSync } from './services/firebase.ts';
 
 const LOCAL_STORAGE_KEY_SECTIONS = 'cchc_hoi_an_dong_sections_2026';
 const LOCAL_STORAGE_KEY_CONFIG = 'cchc_hoi_an_dong_gas_config';
@@ -93,6 +95,8 @@ export default function App() {
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
   const [lastSyncTime, setLastSyncTime] = useState<string>('');
   const [isGitHubModalOpen, setIsGitHubModalOpen] = useState<boolean>(false);
+  const [isDriveEvidenceHubOpen, setIsDriveEvidenceHubOpen] = useState<boolean>(false);
+  const [firebaseConnected, setFirebaseConnected] = useState<boolean>(true);
   const [syncNotification, setSyncNotification] = useState<{ id: string; text: string; type: 'success' | 'info' } | null>(null);
 
   const isInitialMount = useRef<boolean>(true);
@@ -205,6 +209,17 @@ export default function App() {
         }
       }
 
+      // 4. Save to Firebase Firestore (Real-time synchronization across all devices and machines)
+      try {
+        const fbOk = await saveToFirebase(stateData);
+        if (fbOk) {
+          setFirebaseConnected(true);
+        }
+      } catch (fbErr) {
+        console.warn('Lỗi lưu Firebase:', fbErr);
+        setFirebaseConnected(false);
+      }
+
       setLastSyncTime(timeStr);
       setGasConfig((prev) => ({ ...prev, lastSync: timeStr }));
 
@@ -228,12 +243,36 @@ export default function App() {
     }
   };
 
-  // 1. Initial Data Load on App Startup (from shared server store or Drive)
+  // 1. Initial Data Load on App Startup (from Firebase Firestore, shared server store, or Drive)
   useEffect(() => {
     let isMounted = true;
     const fetchInitialData = async () => {
       try {
-        // A. Load from shared server store first (instant multi-device sync)
+        // A. Load from Firebase Firestore first (highest priority, real-time across all devices)
+        try {
+          const fbData = await loadFromFirebase();
+          if (fbData && fbData.sections && Array.isArray(fbData.sections) && fbData.sections.length > 0) {
+            if (isMounted) {
+              setSections(fbData.sections);
+              if (Array.isArray(fbData.changeLog)) {
+                setChangeLog(fbData.changeLog);
+              }
+              const remoteTime = fbData.lastUpdatedTimestamp || (fbData.lastUpdated ? new Date(fbData.lastUpdated).getTime() : Date.now());
+              lastLocalUpdateRef.current = remoteTime;
+              const syncTime = fbData.lastUpdated
+                ? new Date(fbData.lastUpdated).toLocaleTimeString('vi-VN')
+                : new Date().toLocaleTimeString('vi-VN');
+              setLastSyncTime(syncTime);
+              setFirebaseConnected(true);
+              isInitialLoadCompleteRef.current = true;
+              return;
+            }
+          }
+        } catch (fbErr) {
+          console.warn('Firebase initial load note:', fbErr);
+        }
+
+        // B. Fallback: Load from shared server store (instant multi-device sync)
         const storeData = await loadFromLocalServerStore();
         if (storeData && storeData.sections && Array.isArray(storeData.sections) && storeData.sections.length > 0) {
           if (isMounted) {
@@ -284,7 +323,49 @@ export default function App() {
     };
   }, []);
 
-  // 2. Real-time Cross-Tab Synchronization (BroadcastChannel)
+  // 2. Real-time Firebase Firestore Sync Across All Computers & Mobile Devices
+  useEffect(() => {
+    const unsub = subscribeToFirebaseSync(
+      (remoteData) => {
+        if (remoteData && remoteData.sections && Array.isArray(remoteData.sections) && remoteData.sections.length > 0) {
+          const remoteTime = remoteData.lastUpdatedTimestamp || (remoteData.lastUpdated ? new Date(remoteData.lastUpdated).getTime() : 0);
+          if (remoteTime > lastLocalUpdateRef.current + 400) {
+            lastLocalUpdateRef.current = remoteTime;
+            setSections(remoteData.sections);
+            if (Array.isArray(remoteData.changeLog)) {
+              setChangeLog(remoteData.changeLog);
+            }
+            const timeStr = remoteData.lastUpdated
+              ? new Date(remoteData.lastUpdated).toLocaleTimeString('vi-VN')
+              : new Date().toLocaleTimeString('vi-VN');
+            setLastSyncTime(timeStr);
+            setFirebaseConnected(true);
+            try {
+              localStorage.setItem(LOCAL_STORAGE_KEY_SECTIONS, JSON.stringify(remoteData.sections));
+              if (remoteData.changeLog) {
+                localStorage.setItem(LOCAL_STORAGE_KEY_CHANGELOG, JSON.stringify(remoteData.changeLog));
+              }
+            } catch (_) {}
+
+            setSyncNotification({
+              id: 'fb-sync-' + Date.now(),
+              text: `🔥 Đồng bộ thời gian thực từ máy khác: ${remoteData.note || 'Cập nhật CCHC'} (${timeStr})`,
+              type: 'info',
+            });
+          }
+        }
+      },
+      () => {
+        setFirebaseConnected(false);
+      }
+    );
+
+    return () => {
+      if (unsub) unsub();
+    };
+  }, []);
+
+  // 3. Real-time Cross-Tab Synchronization (BroadcastChannel)
   useEffect(() => {
     if (typeof BroadcastChannel === 'undefined') return;
     const channel = new BroadcastChannel('cchc_sync_channel');
@@ -656,6 +737,7 @@ export default function App() {
         evaluation={evaluation}
         gasConfig={gasConfig}
         onOpenDriveModal={handleRequestOpenDrive}
+        onOpenDriveEvidenceHub={() => setIsDriveEvidenceHubOpen(true)}
         onOpenReportModal={() => setIsReportModalOpen(true)}
         onOpenHelpModal={() => setIsHelpModalOpen(true)}
         onOpenGitHubModal={() => setIsGitHubModalOpen(true)}
@@ -664,6 +746,7 @@ export default function App() {
         isSyncing={isSyncing}
         lastSyncTime={lastSyncTime}
         onSyncNow={() => syncWithDrive(sections, changeLog, 'Lưu thủ công toàn bộ', undefined, true)}
+        firebaseConnected={firebaseConnected}
       />
 
       {/* Main Content Area */}
@@ -675,6 +758,7 @@ export default function App() {
           sections={sections}
           activeSectionId={activeSectionId}
           onSelectSection={setActiveSectionId}
+          onOpenDriveEvidenceHub={() => setIsDriveEvidenceHubOpen(true)}
         />
 
         {/* Master Criteria Table */}
@@ -745,9 +829,32 @@ export default function App() {
         changeLog={changeLog}
         onForceSync={() => syncWithDrive(sections, changeLog, 'Lưu thủ công toàn bộ', undefined, true)}
         onReloadFromDrive={handleReloadFromDrive}
+        onUpdateSections={(newSections) => {
+          setSections(newSections);
+          syncWithDrive(newSections, changeLog, 'Cập nhật tài liệu minh chứng từ Google Drive');
+        }}
         isSyncing={isSyncing}
         lastSyncTime={lastSyncTime}
         driveFileId={driveFileId}
+      />
+
+      <DriveEvidenceHubModal
+        isOpen={isDriveEvidenceHubOpen}
+        onClose={() => setIsDriveEvidenceHubOpen(false)}
+        sections={sections}
+        onApplyUpdatedSections={(newSections, note) => {
+          setSections(newSections);
+          syncWithDrive(newSections, changeLog, note, undefined, true);
+          setSyncNotification({
+            id: 'evidence-' + Date.now(),
+            text: `✅ ${note}`,
+            type: 'success',
+          });
+        }}
+        webAppUrl={gasConfig.webAppUrl}
+        folderId={gasConfig.driveFolderId || DEFAULT_FOLDER_ID}
+        folderName={gasConfig.driveFolderName || 'CCHC_2026_UBND_Phuong_Hoi_An_Dong'}
+        firebaseConnected={firebaseConnected}
       />
 
       <ReportExportModal

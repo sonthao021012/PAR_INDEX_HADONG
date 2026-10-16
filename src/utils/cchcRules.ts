@@ -129,6 +129,7 @@ export function generateGoogleAppsScriptCode(config?: Partial<GASConfig>): strin
  */
 
 const ROOT_FOLDER_NAME = "${rootFolderName}";
+const ROOT_FOLDER_ID = "${config?.driveFolderId || ''}";
 const DATA_FILE_NAME = "Du_Lieu_CCHC_2026_Phuong_Hoi_An_Dong.json";
 const LOG_SHEET_NAME = "Nhat_Ky_Minh_Chung_CCHC_2026";
 
@@ -141,9 +142,9 @@ function doGet(e) {
       return responseSuccess(data);
     }
 
-    if (action === "getDriveFiles") {
+    if (action === "getDriveFiles" || action === "scanDrive" || action === "scanFiles") {
       const files = scanDriveFiles();
-      return responseSuccess({ files: files });
+      return responseSuccess({ files: files, totalFiles: files.length });
     }
 
     return ContentService.createTextOutput(JSON.stringify({
@@ -177,6 +178,12 @@ function doPost(e) {
         realFileCount: files.length,
         files: files
       });
+    }
+
+    // QUÉT TẤT CẢ FILE THỰC TẾ TRONG THƯ MỤC DRIVE
+    if (action === "getDriveFiles" || action === "scanDrive" || action === "scanFiles") {
+      const files = scanDriveFiles();
+      return responseSuccess({ files: files, totalFiles: files.length });
     }
 
     // LƯU MỌI THAY ĐỔI (ĐIỂM, TIẾN ĐỘ, MINH CHỨNG) VÀO DRIVE THEO THỜI GIAN THỰC
@@ -285,6 +292,13 @@ function doPost(e) {
 }
 
 function getOrCreateRootFolder() {
+  if (ROOT_FOLDER_ID && ROOT_FOLDER_ID.trim().length > 5) {
+    try {
+      return DriveApp.getFolderById(ROOT_FOLDER_ID.trim());
+    } catch(errId) {
+      Logger.log("Không mở được folder theo ID, chuyển sang tìm theo tên: " + errId.toString());
+    }
+  }
   const folders = DriveApp.getFoldersByName(ROOT_FOLDER_NAME);
   if (folders.hasNext()) {
     return folders.next();
@@ -336,39 +350,37 @@ function loadDataFromStorage() {
   return null;
 }
 
-function scanDriveFiles() {
+function scanDriveFiles(targetFolder, currentPath) {
   const fileList = [];
   try {
-    const rootFolder = getOrCreateRootFolder();
-    const rootFiles = rootFolder.getFiles();
+    const root = targetFolder || getOrCreateRootFolder();
+    const path = currentPath || root.getName();
+
+    // 1. Quét tệp trong thư mục hiện tại
+    const rootFiles = root.getFiles();
     while (rootFiles.hasNext()) {
       const f = rootFiles.next();
+      if (f.getName() === DATA_FILE_NAME || f.getName() === LOG_SHEET_NAME) continue;
       fileList.push({
         id: f.getId(),
         name: f.getName(),
         url: f.getUrl(),
         viewUrl: "https://drive.google.com/file/d/" + f.getId() + "/view?usp=sharing",
         size: (f.getSize() / 1024).toFixed(1) + " KB",
-        date: f.getDateCreated().toISOString().split("T")[0],
-        folder: ROOT_FOLDER_NAME
+        date: Utilities.formatDate(f.getDateCreated(), "GMT+7", "yyyy-MM-dd"),
+        folder: root.getName(),
+        folderPath: path,
+        mimeType: f.getMimeType()
       });
     }
-    // Quét thư mục con cấp 1
-    const subFolders = rootFolder.getFolders();
+
+    // 2. Đệ quy quét tất cả thư mục con (bất kể độ sâu)
+    const subFolders = root.getFolders();
     while (subFolders.hasNext()) {
       const sub = subFolders.next();
-      const subFiles = sub.getFiles();
-      while (subFiles.hasNext()) {
-        const sf = subFiles.next();
-        fileList.push({
-          id: sf.getId(),
-          name: sf.getName(),
-          url: sf.getUrl(),
-          viewUrl: "https://drive.google.com/file/d/" + sf.getId() + "/view?usp=sharing",
-          size: (sf.getSize() / 1024).toFixed(1) + " KB",
-          date: sf.getDateCreated().toISOString().split("T")[0],
-          folder: sub.getName()
-        });
+      const subFiles = scanDriveFiles(sub, path + " > " + sub.getName());
+      for (var i = 0; i < subFiles.length; i++) {
+        fileList.push(subFiles[i]);
       }
     }
   } catch (e) {

@@ -8,6 +8,7 @@ interface DashboardSummaryProps {
   sections: CCHCSection[];
   activeSectionId: string;
   onSelectSection: (sectionId: string) => void;
+  onOpenDriveEvidenceHub?: () => void;
 }
 
 export const DashboardSummary: React.FC<DashboardSummaryProps> = ({
@@ -15,6 +16,7 @@ export const DashboardSummary: React.FC<DashboardSummaryProps> = ({
   sections,
   activeSectionId,
   onSelectSection,
+  onOpenDriveEvidenceHub,
 }) => {
   return (
     <div className="space-y-6">
@@ -91,22 +93,28 @@ export const DashboardSummary: React.FC<DashboardSummaryProps> = ({
           </div>
         </div>
 
-        {/* Card 4: Minh chứng Google Drive */}
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200/80 p-4 hover:shadow-md transition">
+        {/* Card 4: Minh chứng Google Drive & Firebase */}
+        <div
+          onClick={onOpenDriveEvidenceHub}
+          className="bg-white rounded-xl shadow-sm border border-slate-200/80 p-4 hover:shadow-md hover:border-sky-300 transition cursor-pointer group"
+          title="Bấm để mở Trung tâm Quản lý & Nhận diện Minh chứng Google Drive"
+        >
           <div className="flex items-center justify-between text-slate-500 mb-2">
-            <span className="text-xs font-semibold uppercase tracking-wider">Tài Liệu Kiểm Chứng</span>
-            <div className="p-2 rounded-lg bg-amber-50 text-amber-700">
+            <span className="text-xs font-semibold uppercase tracking-wider group-hover:text-sky-700 transition">Tài Liệu Kiểm Chứng</span>
+            <div className="p-2 rounded-lg bg-amber-50 text-amber-700 group-hover:bg-sky-50 group-hover:text-sky-700 transition">
               <FileText className="w-5 h-5" />
             </div>
           </div>
           <div className="flex items-baseline gap-2">
-            <span className="text-3xl font-black text-amber-600">{evaluation.totalEvidenceCount}</span>
+            <span className="text-3xl font-black text-amber-600 group-hover:text-sky-700 transition">{evaluation.totalEvidenceCount}</span>
             <span className="text-sm font-semibold text-slate-500">tệp minh chứng</span>
           </div>
-          <p className="mt-2.5 pt-2.5 border-t border-slate-100 text-xs text-slate-500 flex items-center justify-between">
-            <span>Đã lưu vào Google Drive</span>
-            <span className="font-semibold text-sky-700">Cây thư mục chuẩn</span>
-          </p>
+          <div className="mt-2.5 pt-2.5 border-t border-slate-100 text-xs text-slate-500 flex items-center justify-between">
+            <span className="text-slate-500">Google Drive & Firebase</span>
+            <span className="font-bold text-sky-700 group-hover:underline flex items-center gap-1">
+              Quản lý & Quét &rarr;
+            </span>
+          </div>
         </div>
       </div>
 

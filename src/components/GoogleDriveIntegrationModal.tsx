@@ -21,9 +21,15 @@ import {
   ShieldCheck,
   History
 } from 'lucide-react';
-import { GASConfig, CCHCSection, ChangeLogEntry } from '../types/cchc.ts';
+import { GASConfig, CCHCSection, ChangeLogEntry, EvidenceFile } from '../types/cchc.ts';
 import { generateGoogleAppsScriptCode } from '../utils/cchcRules.ts';
 import { sendGasRequest } from '../services/gasClient.ts';
+import {
+  scanAndAutoMapDriveFiles,
+  manuallyAttachDriveFileToCriterion,
+  ScannedDriveFile,
+  DriveScanResult,
+} from '../services/driveScanner.ts';
 
 interface GoogleDriveIntegrationModalProps {
   isOpen: boolean;
@@ -34,6 +40,7 @@ interface GoogleDriveIntegrationModalProps {
   changeLog?: ChangeLogEntry[];
   onForceSync?: () => Promise<void>;
   onReloadFromDrive?: () => Promise<void>;
+  onUpdateSections?: (newSections: CCHCSection[]) => void;
   isSyncing?: boolean;
   lastSyncTime?: string;
   driveFileId?: string;
@@ -48,13 +55,14 @@ export const GoogleDriveIntegrationModal: React.FC<GoogleDriveIntegrationModalPr
   changeLog = [],
   onForceSync,
   onReloadFromDrive,
+  onUpdateSections,
   isSyncing = false,
   lastSyncTime,
   driveFileId,
 }) => {
   if (!isOpen) return null;
 
-  const [activeTab, setActiveTab] = useState<'config' | 'log' | 'tree' | 'script' | 'guide'>('log');
+  const [activeTab, setActiveTab] = useState<'config' | 'log' | 'tree' | 'script' | 'guide'>('tree');
   const [webAppUrl, setWebAppUrl] = useState<string>(gasConfig.webAppUrl || '');
   const [folderName, setFolderName] = useState<string>(gasConfig.driveFolderName || 'CCHC_2026_UBND_Phuong_Hoi_An_Dong');
   const [folderId, setFolderId] = useState<string>(gasConfig.driveFolderId || '1eiE_ZX12JzBm9HBMf1jvMm64SEuZUvkq');
@@ -63,6 +71,18 @@ export const GoogleDriveIntegrationModal: React.FC<GoogleDriveIntegrationModalPr
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
   const [copiedScript, setCopiedScript] = useState<boolean>(false);
   const [syncActionMsg, setSyncActionMsg] = useState<string>('');
+
+  // Drive Scanner & File Mapping States
+  const [isScanningDrive, setIsScanningDrive] = useState<boolean>(false);
+  const [scannedFiles, setScannedFiles] = useState<ScannedDriveFile[]>([]);
+  const [scanResult, setScanResult] = useState<DriveScanResult | null>(null);
+  const [selectedCriterionForFile, setSelectedCriterionForFile] = useState<{ [fileId: string]: string }>({});
+
+  // Manual Drive link form state
+  const [manualFileName, setManualFileName] = useState<string>('');
+  const [manualDriveLink, setManualDriveLink] = useState<string>('');
+  const [manualCriterionCode, setManualCriterionCode] = useState<string>('I.1.a');
+  const [manualSuccessMsg, setManualSuccessMsg] = useState<string>('');
 
   const scriptCode = generateGoogleAppsScriptCode({
     driveFolderName: folderName,
@@ -148,6 +168,88 @@ export const GoogleDriveIntegrationModal: React.FC<GoogleDriveIntegrationModalPr
     navigator.clipboard.writeText(scriptCode);
     setCopiedScript(true);
     setTimeout(() => setCopiedScript(false), 2500);
+  };
+
+  // Flatten all available criteria for selection dropdowns
+  const allCriteriaOptions = React.useMemo(() => {
+    return sections.flatMap((sec) =>
+      sec.criteria.map((c) => ({
+        code: c.code,
+        title: c.title,
+        label: `[${c.code}] ${c.title.length > 55 ? c.title.slice(0, 53) + '...' : c.title}`,
+      }))
+    );
+  }, [sections]);
+
+  // Quét toàn bộ tệp trong Google Drive và tự động ghép vào các tiêu chí
+  const handleScanDrive = async () => {
+    setIsScanningDrive(true);
+    setScanResult(null);
+    try {
+      const result = await scanAndAutoMapDriveFiles(webAppUrl, sections);
+      setScanResult(result);
+      if (result.files && result.files.length > 0) {
+        setScannedFiles(result.files);
+      }
+      if (result.success && result.newlyMappedCount > 0 && onUpdateSections) {
+        onUpdateSections(result.updatedSections);
+      }
+    } catch (err: any) {
+      setScanResult({
+        success: false,
+        message: 'Lỗi khi quét Google Drive: ' + (err?.message || String(err)),
+        totalFound: 0,
+        newlyMappedCount: 0,
+        files: [],
+        unmappedFiles: [],
+        updatedSections: sections,
+        error: String(err),
+      });
+    } finally {
+      setIsScanningDrive(false);
+    }
+  };
+
+  // Gán thủ công một tệp từ Drive vào một tiêu chí
+  const handleAssignFile = (file: ScannedDriveFile, targetCode: string) => {
+    if (!targetCode) return;
+    const updated = manuallyAttachDriveFileToCriterion(file, targetCode, sections);
+    if (onUpdateSections) {
+      onUpdateSections(updated);
+    }
+    setScannedFiles((prev) =>
+      prev.map((f) => (f.id === file.id ? { ...f, mappedCriterionCode: targetCode } : f))
+    );
+    setSyncActionMsg(`Đã gán tệp "${file.name}" vào tiêu chí [${targetCode}] thành công!`);
+    setTimeout(() => setSyncActionMsg(''), 4000);
+  };
+
+  // Thêm liên kết tệp Google Drive thủ công
+  const handleAddManualLink = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!manualDriveLink.trim()) {
+      alert('Vui lòng nhập đường link Google Drive của tệp minh chứng!');
+      return;
+    }
+    const name = manualFileName.trim() || `Minh chứng Drive ${manualCriterionCode}`;
+    const virtualFile: ScannedDriveFile = {
+      id: 'drive-manual-' + Date.now(),
+      name: name,
+      url: manualDriveLink.trim(),
+      viewUrl: manualDriveLink.trim(),
+      size: 'Google Drive Link',
+      date: new Date().toISOString().split('T')[0],
+      folder: 'Google Drive',
+      folderPath: folderName,
+    };
+    const updated = manuallyAttachDriveFileToCriterion(virtualFile, manualCriterionCode, sections);
+    if (onUpdateSections) {
+      onUpdateSections(updated);
+    }
+    setManualFileName('');
+    setManualDriveLink('');
+    setManualSuccessMsg(`🟢 Đã gắn tệp "${name}" vào tiêu chí [${manualCriterionCode}] thành công!`);
+    setTimeout(() => setManualSuccessMsg(''), 4000);
   };
 
   // Extract all uploaded evidence files across all criteria
@@ -419,138 +521,281 @@ export const GoogleDriveIntegrationModal: React.FC<GoogleDriveIntegrationModalPr
             </div>
           )}
 
-          {/* TAB 2: THƯ MỤC & TÀI LIỆU DRIVE THỰC TẾ */}
+          {/* TAB 2: THƯ MỤC & TÀI LIỆU DRIVE THỰC TẾ (DRIVE EXPLORER & AUTO-LINKER) */}
           {activeTab === 'tree' && (
             <div className="space-y-4">
-              {/* Highlight Notice about the 1 Real Document in Drive */}
-              <div className="bg-amber-50/80 border border-amber-300 rounded-xl p-4 text-xs text-amber-950 space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 font-bold text-amber-900 text-sm">
-                    <ShieldCheck className="w-4 h-4 text-amber-700" />
-                    <span>Kiểm tra thực tế tài liệu minh chứng trong Google Drive:</span>
+              {/* Scan Control Header */}
+              <div className="bg-gradient-to-r from-sky-900 via-slate-900 to-sky-950 text-white rounded-xl p-4 sm:p-5 border border-sky-700/50 shadow-md flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="space-y-1.5">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <h3 className="font-bold text-white text-base flex items-center gap-2">
+                      Quét & Đồng Bộ Tệp Minh Chứng Trên Google Drive
+                    </h3>
                   </div>
-                  <span className="px-2 py-0.5 bg-amber-200 text-amber-900 rounded font-bold text-[11px]">
-                    1 Tài liệu gốc thực tế
-                  </span>
-                </div>
-                <p className="text-slate-700 leading-relaxed">
-                  Đúng như cán bộ đã kiểm tra: trong thư mục gốc của Google Drive hiện chỉ có <strong>01 tài liệu minh chứng thực tế duy nhất</strong> là văn bản Quyết định & Phụ lục II ban hành Bộ chỉ số CCHC cấp xã, phường (<code>QD VA PLII CAP XA PHUONG.pdf</code>). Hệ thống <strong>không bịa đặt</strong> hay giả lập bất kỳ tài liệu nào khác. Các tiêu chí khác đều ở trạng thái chờ cán bộ bổ sung hoặc tải lên văn bản thực tế.
-                </p>
-                <div className="pt-1 flex items-center gap-2">
-                  <a
-                    href={`https://drive.google.com/drive/folders/${folderId}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-sky-700 hover:bg-sky-600 text-white rounded-lg text-xs font-bold transition shadow-xs"
-                  >
-                    <ExternalLink className="w-3.5 h-3.5" />
-                    <span>Mở Thư mục Google Drive của Phường</span>
-                  </a>
-                  <span className="text-[11px] text-slate-500 font-mono">
-                    ID Thư mục: {folderId}
-                  </span>
-                </div>
-              </div>
-
-              {/* List of Real Documents Currently in Root Folder / Drive */}
-              <div className="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-xs">
-                <div className="bg-slate-100 px-4 py-2.5 border-b border-slate-200 font-bold text-xs uppercase text-slate-700 flex items-center justify-between">
-                  <span>Danh mục tệp thực tế trong Google Drive của Phường</span>
-                  <span className="text-[11px] font-normal text-slate-500">Thư mục: {folderName}</span>
-                </div>
-
-                <div className="divide-y divide-slate-100 text-xs">
-                  {/* File 1: The REAL Document */}
-                  <div className="p-3.5 flex items-center justify-between hover:bg-amber-50/40 transition-colors">
-                    <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-lg bg-red-100 text-red-700 flex items-center justify-center font-bold text-xs shrink-0">
-                        PDF
-                      </div>
-                      <div>
-                        <div className="font-bold text-slate-900 flex items-center gap-2">
-                          <span>QD VA PLII CAP XA PHUONG.pdf</span>
-                          <span className="px-1.5 py-0.2 rounded bg-amber-100 text-amber-800 text-[10px] font-bold">
-                            Tài liệu gốc thực tế
-                          </span>
-                        </div>
-                        <p className="text-[11px] text-slate-500 mt-0.5">
-                          Quyết định và Phụ lục II ban hành Bộ chỉ số CCHC cấp xã phường • Dung lượng: 3.8 MB • Vị trí: Thư mục gốc Drive
-                        </p>
-                        <div className="text-[10px] text-sky-700 font-medium mt-0.5">
-                          Gắn với Tiêu chí: [I.1.a] Kế hoạch CCHC giai đoạn 2026-2030 ban hành đúng quy định
-                        </div>
-                      </div>
-                    </div>
-
+                  <p className="text-xs text-slate-300 leading-relaxed max-w-2xl">
+                    Khi cán bộ tải các tệp minh chứng trực tiếp lên thư mục Google Drive của Phường, hãy bấm nút dưới đây để hệ thống tự động quét, đọc danh sách tệp và tự động gắn vào các tiêu chí phù hợp theo mã hoặc từ khóa.
+                  </p>
+                  <div className="flex items-center gap-2 text-xs text-sky-300 pt-1">
+                    <span>📁 Thư mục gốc: <strong>{folderName}</strong></span>
+                    <span>•</span>
                     <a
                       href={`https://drive.google.com/drive/folders/${folderId}`}
                       target="_blank"
                       rel="noreferrer"
-                      className="px-3 py-1.5 rounded-lg bg-sky-50 text-sky-700 border border-sky-200 hover:bg-sky-100 transition font-bold text-xs flex items-center gap-1 shrink-0"
+                      className="inline-flex items-center gap-1 text-amber-300 hover:underline font-semibold"
                     >
                       <ExternalLink className="w-3.5 h-3.5" />
-                      <span>Xem trên Drive</span>
+                      <span>Mở thư mục trên Google Drive</span>
                     </a>
                   </div>
+                </div>
 
-                  {/* File 2: Real-time State & Log File */}
-                  <div className="p-3.5 flex items-center justify-between hover:bg-emerald-50/40 transition-colors">
-                    <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-xs shrink-0 font-mono">
-                        JSON
-                      </div>
-                      <div>
-                        <div className="font-bold text-slate-900 flex items-center gap-2">
-                          <span>Nhat_Ky_Cap_Nhat_CCHC_2026.json</span>
-                          <span className="px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-800 text-[10px] font-bold">
-                            Nhật ký thời gian thực
-                          </span>
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 shrink-0">
+                  <button
+                    onClick={handleScanDrive}
+                    disabled={isScanningDrive}
+                    className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 text-xs font-bold shadow-lg flex items-center justify-center gap-2 transition disabled:opacity-50 cursor-pointer"
+                  >
+                    <RefreshCw className={`w-4 h-4 ${isScanningDrive ? 'animate-spin' : ''}`} />
+                    <span>{isScanningDrive ? 'Đang quét Drive...' : '🔍 Quét tệp trên Drive ngay'}</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Scan Result Notice Banner */}
+              {scanResult && (
+                <div className={`p-4 rounded-xl border text-xs leading-relaxed space-y-2 ${
+                  scanResult.isOldScriptVersion
+                    ? 'bg-amber-50 border-amber-300 text-amber-950'
+                    : scanResult.success
+                    ? 'bg-emerald-50 border-emerald-300 text-emerald-950'
+                    : 'bg-rose-50 border-rose-300 text-rose-950'
+                }`}>
+                  <div className="flex items-start gap-2.5 font-semibold text-sm">
+                    {scanResult.isOldScriptVersion ? (
+                      <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                    ) : scanResult.success ? (
+                      <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+                    ) : (
+                      <AlertTriangle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
+                    )}
+                    <div>
+                      <div>{scanResult.message}</div>
+                      {scanResult.isOldScriptVersion && (
+                        <div className="font-normal text-xs text-slate-700 mt-2 space-y-2">
+                          <p>
+                            👉 <strong>Lý do:</strong> Bạn vừa tải các tệp mới lên Drive, nhưng Google Apps Script đang chạy trên Google của bạn là bản triển khai ban đầu (chưa cập nhật hàm đọc quét thư mục <code>getDriveFiles</code>).
+                          </p>
+                          <div className="flex flex-wrap items-center gap-2 pt-1">
+                            <button
+                              onClick={() => setActiveTab('script')}
+                              className="px-3.5 py-1.5 bg-amber-600 hover:bg-amber-500 text-white rounded-lg font-bold text-xs shadow-xs transition"
+                            >
+                              📋 Xem mã & hướng dẫn cập nhật Apps Script (1 phút)
+                            </button>
+                            <span className="text-slate-500">hoặc dùng form gán nhanh thủ công ngay bên dưới ↓</span>
+                          </div>
                         </div>
-                        <p className="text-[11px] text-slate-500 mt-0.5">
-                          Lưu toàn bộ điểm tự chấm, tiến độ, giải trình và lịch sử thao tác của cán bộ • Tự động cập nhật mỗi khi có thay đổi
-                        </p>
-                        <div className="text-[10px] text-emerald-700 font-medium mt-0.5">
-                          Trạng thái: 🟢 Đồng bộ thời gian thực vào Google Drive
-                        </div>
-                      </div>
+                      )}
                     </div>
+                  </div>
+                </div>
+              )}
 
-                    <button
-                      onClick={handleManualSync}
-                      disabled={isSyncing}
-                      className="px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 transition font-bold text-xs flex items-center gap-1 shrink-0"
-                    >
-                      <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
-                      <span>Cập nhật</span>
-                    </button>
+              {/* Form gán nhanh tệp Google Drive thủ công */}
+              <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 sm:p-5 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 font-bold text-slate-900 text-sm">
+                    <CloudUpload className="w-4 h-4 text-sky-600" />
+                    <span>Gán Nhanh Tệp Đã Có Trên Google Drive Vào Tiêu Chí</span>
+                  </div>
+                  <span className="text-[11px] text-slate-500">
+                    Dành cho các tệp đã upload sẵn lên Drive
+                  </span>
+                </div>
+                <p className="text-xs text-slate-600">
+                  Nếu bạn đã tải tài liệu lên Google Drive của Phường, hãy dán đường link chia sẻ của tệp và chọn mã tiêu chí tương ứng để hệ thống liên kết và tính điểm ngay lập tức:
+                </p>
+
+                <form onSubmit={handleAddManualLink} className="grid grid-cols-1 md:grid-cols-12 gap-3 pt-1">
+                  <div className="md:col-span-4">
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                      Tên tệp / Số hiệu văn bản:
+                    </label>
+                    <input
+                      type="text"
+                      value={manualFileName}
+                      onChange={(e) => setManualFileName(e.target.value)}
+                      placeholder="Ví dụ: Ke_hoach_CCHC_2026.pdf"
+                      className="w-full text-xs px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:outline-hidden"
+                    />
                   </div>
 
-                  {/* Additional uploaded evidence files if user uploaded any */}
-                  {allUploadedEvidence.filter(e => e.id !== 'ev-root-01').map((ev) => (
-                    <div key={ev.id} className="p-3.5 flex items-center justify-between hover:bg-slate-50 transition-colors">
-                      <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-lg bg-sky-100 text-sky-700 flex items-center justify-center font-bold text-xs shrink-0 uppercase">
-                          {ev.type}
+                  <div className="md:col-span-5">
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                      Đường link chia sẻ trên Google Drive: <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="url"
+                      required
+                      value={manualDriveLink}
+                      onChange={(e) => setManualDriveLink(e.target.value)}
+                      placeholder="https://drive.google.com/file/d/.../view"
+                      className="w-full text-xs px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:outline-hidden font-mono"
+                    />
+                  </div>
+
+                  <div className="md:col-span-3">
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                      Gán vào Tiêu chí:
+                    </label>
+                    <select
+                      value={manualCriterionCode}
+                      onChange={(e) => setManualCriterionCode(e.target.value)}
+                      className="w-full text-xs px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:outline-hidden"
+                    >
+                      {allCriteriaOptions.map((opt) => (
+                        <option key={opt.code} value={opt.code}>
+                          {opt.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="md:col-span-12 flex justify-end">
+                    <button
+                      type="submit"
+                      className="px-4 py-2 bg-sky-700 hover:bg-sky-600 text-white rounded-lg text-xs font-bold transition shadow-xs flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <Check className="w-3.5 h-3.5" />
+                      <span>Gán tài liệu này vào tiêu chí</span>
+                    </button>
+                  </div>
+                </form>
+
+                {manualSuccessMsg && (
+                  <div className="p-2.5 bg-emerald-100 border border-emerald-300 text-emerald-900 rounded-lg text-xs font-semibold flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>{manualSuccessMsg}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Danh sách các tệp minh chứng thực tế đang có */}
+              <div className="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-xs">
+                <div className="bg-slate-100 px-4 py-2.5 border-b border-slate-200 font-bold text-xs uppercase text-slate-700 flex items-center justify-between">
+                  <span className="flex items-center gap-1.5">
+                    <FolderTree className="w-4 h-4 text-sky-700" />
+                    <span>Danh sách tệp minh chứng liên kết Google Drive ({allUploadedEvidence.length} tệp)</span>
+                  </span>
+                  <span className="text-[11px] font-normal text-slate-500">
+                    Thư mục: {folderName}
+                  </span>
+                </div>
+
+                <div className="divide-y divide-slate-100 text-xs">
+                  {allUploadedEvidence.map((ev) => (
+                    <div key={ev.id} className="p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-slate-50 transition-colors">
+                      <div className="flex items-start gap-3">
+                        <div className="w-9 h-9 rounded-lg bg-red-100 text-red-700 flex items-center justify-center font-bold text-xs shrink-0 uppercase mt-0.5">
+                          {ev.type || 'FILE'}
                         </div>
                         <div>
-                          <div className="font-bold text-slate-900">{ev.name}</div>
+                          <div className="font-bold text-slate-900 flex items-center gap-2 flex-wrap">
+                            <span>{ev.name}</span>
+                            <span className="px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-800 text-[10px] font-bold">
+                              Tiêu chí [{ev.criterionCode}]
+                            </span>
+                          </div>
                           <p className="text-[11px] text-slate-500 mt-0.5">
-                            Tiêu chí: [{ev.criterionCode}] • Kích thước: {ev.size || 'Văn bản số'} • Ngày tải: {ev.uploadDate}
+                            Kích thước: {ev.size || 'Google Drive'} • Ngày gắn: {ev.uploadDate}
+                            {ev.note && <span> • Ghi chú: {ev.note}</span>}
                           </p>
                         </div>
                       </div>
 
-                      <a
-                        href={ev.driveUrl || `https://drive.google.com/drive/folders/${folderId}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="px-3 py-1.5 rounded-lg bg-slate-50 text-slate-700 border border-slate-200 hover:bg-slate-100 transition font-semibold text-xs flex items-center gap-1 shrink-0"
-                      >
-                        <ExternalLink className="w-3.5 h-3.5" />
-                        <span>Mở Drive</span>
-                      </a>
+                      <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
+                        <a
+                          href={ev.driveUrl || `https://drive.google.com/drive/folders/${folderId}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="px-3 py-1.5 rounded-lg bg-sky-50 text-sky-700 border border-sky-200 hover:bg-sky-100 transition font-bold text-xs flex items-center gap-1 shrink-0"
+                        >
+                          <ExternalLink className="w-3.5 h-3.5" />
+                          <span>Xem trên Drive</span>
+                        </a>
+                      </div>
                     </div>
                   ))}
+
+                  {/* Display scanned files from Drive if available */}
+                  {scannedFiles.map((file) => {
+                    const isAlreadyMapped = allUploadedEvidence.some(e => e.driveFileId === file.id || e.name === file.name);
+                    if (isAlreadyMapped) return null;
+
+                    return (
+                      <div key={file.id} className="p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-amber-50/40 hover:bg-amber-50/80 transition-colors">
+                        <div className="flex items-start gap-3">
+                          <div className="w-9 h-9 rounded-lg bg-amber-100 text-amber-800 flex items-center justify-center font-bold text-xs shrink-0 uppercase mt-0.5">
+                            DRIVE
+                          </div>
+                          <div>
+                            <div className="font-bold text-slate-900 flex items-center gap-2 flex-wrap">
+                              <span>{file.name}</span>
+                              <span className="px-1.5 py-0.2 rounded bg-amber-200 text-amber-900 text-[10px] font-semibold">
+                                Tìm thấy trên Drive (Chưa gán)
+                              </span>
+                            </div>
+                            <p className="text-[11px] text-slate-500 mt-0.5">
+                              Vị trí: {file.folderPath || file.folder} • Kích thước: {file.size} • Ngày tạo: {file.date}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
+                          <select
+                            value={selectedCriterionForFile[file.id] || 'I.1.a'}
+                            onChange={(e) =>
+                              setSelectedCriterionForFile((prev) => ({
+                                ...prev,
+                                [file.id]: e.target.value,
+                              }))
+                            }
+                            className="text-xs px-2.5 py-1.5 bg-white border border-slate-300 rounded-lg focus:outline-hidden"
+                          >
+                            {allCriteriaOptions.map((opt) => (
+                              <option key={opt.code} value={opt.code}>
+                                {opt.code} - {opt.title.slice(0, 30)}...
+                              </option>
+                            ))}
+                          </select>
+
+                          <button
+                            onClick={() =>
+                              handleAssignFile(
+                                file,
+                                selectedCriterionForFile[file.id] || 'I.1.a'
+                              )
+                            }
+                            className="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-600 text-white rounded-lg text-xs font-bold transition shadow-xs"
+                          >
+                            Gán vào tiêu chí
+                          </button>
+
+                          <a
+                            href={file.viewUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="p-1.5 rounded-lg text-slate-600 hover:text-slate-900 bg-white border border-slate-200"
+                            title="Xem tệp trên Drive"
+                          >
+                            <ExternalLink className="w-4 h-4" />
+                          </a>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
 

@@ -152,7 +152,23 @@ export const CriterionDetailModal: React.FC<CriterionDetailModalProps> = ({
 
       const updated = [newEvidence, ...evidenceList];
       setEvidenceList(updated);
-      setUploadSuccessMsg('Đã thêm minh chứng thành công vào danh sách!');
+
+      const newStatus = status === 'not_started' ? 'completed' : status;
+      const newScore = selfScore === 0 ? criterion.maxScore : selfScore;
+      setStatus(newStatus);
+      setSelfScore(newScore);
+
+      // Tự động lưu và đồng bộ ngay lập tức vào tiêu chí để không bị mất khi đóng modal
+      onSaveCriterion({
+        ...criterion,
+        selfScore: validateCriterionScore(newScore, criterion.maxScore),
+        status: newStatus,
+        department,
+        notes,
+        evidenceList: updated,
+      });
+
+      setUploadSuccessMsg('✅ Đã lưu và gắn minh chứng thành công vào tiêu chí (Đã đồng bộ thời gian thực)!');
       setTimeout(() => setUploadSuccessMsg(''), 4000);
 
       // Reset form
@@ -174,7 +190,16 @@ export const CriterionDetailModal: React.FC<CriterionDetailModalProps> = ({
 
   const handleDeleteEvidence = (id: string) => {
     if (confirm('Bạn có chắc chắn muốn xóa tài liệu minh chứng này?')) {
-      setEvidenceList(evidenceList.filter((item) => item.id !== id));
+      const updated = evidenceList.filter((item) => item.id !== id);
+      setEvidenceList(updated);
+      onSaveCriterion({
+        ...criterion,
+        selfScore: validateCriterionScore(selfScore, criterion.maxScore),
+        status,
+        department,
+        notes,
+        evidenceList: updated,
+      });
     }
   };
 

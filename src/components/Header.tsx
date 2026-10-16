@@ -1,10 +1,11 @@
-import { ShieldCheck, CloudUpload, Printer, Download, HelpCircle, HardDrive, Sparkles, RefreshCw, CheckCircle2, Github } from 'lucide-react';
+import { ShieldCheck, CloudUpload, Printer, Download, HelpCircle, HardDrive, Sparkles, RefreshCw, CheckCircle2, Github, Flame } from 'lucide-react';
 import { OverallEvaluation, GASConfig } from '../types/cchc.ts';
 
 interface HeaderProps {
   evaluation: OverallEvaluation;
   gasConfig: GASConfig;
   onOpenDriveModal: () => void;
+  onOpenDriveEvidenceHub?: () => void;
   onOpenReportModal: () => void;
   onOpenHelpModal: () => void;
   onOpenGitHubModal?: () => void;
@@ -13,12 +14,14 @@ interface HeaderProps {
   isSyncing?: boolean;
   lastSyncTime?: string;
   onSyncNow?: () => void;
+  firebaseConnected?: boolean;
 }
 
 export const Header: React.FC<HeaderProps> = ({
   evaluation,
   gasConfig,
   onOpenDriveModal,
+  onOpenDriveEvidenceHub,
   onOpenReportModal,
   onOpenHelpModal,
   onOpenGitHubModal,
@@ -27,6 +30,7 @@ export const Header: React.FC<HeaderProps> = ({
   isSyncing = false,
   lastSyncTime = '',
   onSyncNow,
+  firebaseConnected = true,
 }) => {
   return (
     <header className="bg-gradient-to-r from-red-800 via-red-900 to-slate-900 text-white shadow-xl border-b-4 border-amber-500">
@@ -76,6 +80,15 @@ export const Header: React.FC<HeaderProps> = ({
               ))}
             </div>
 
+            {/* Firebase Real-time Firestore Sync Badge */}
+            <div className="flex items-center gap-1.5 bg-black/40 px-2.5 py-1 rounded-lg border border-orange-500/30 text-xs">
+              <span className={`w-2 h-2 rounded-full ${firebaseConnected ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`}></span>
+              <span className="text-[11px] text-orange-200 font-semibold flex items-center gap-1">
+                <Flame className="w-3.5 h-3.5 text-orange-400 fill-orange-400" />
+                <span>{firebaseConnected ? 'Firebase: Trực tuyến' : 'Firebase: Ngoại tuyến'}</span>
+              </span>
+            </div>
+
             {/* Real-time Google Drive Sync Pill & Sync Button */}
             <div className="flex items-center gap-1.5 bg-black/40 px-2.5 py-1 rounded-lg border border-white/10 text-xs">
               <span className={`w-2 h-2 rounded-full ${isSyncing ? 'bg-amber-400 animate-ping' : 'bg-emerald-400'}`}></span>
@@ -85,7 +98,7 @@ export const Header: React.FC<HeaderProps> = ({
                     <RefreshCw className="w-3 h-3 animate-spin" /> Đang lưu Drive...
                   </span>
                 ) : lastSyncTime ? (
-                  <span className="text-emerald-300">Đã lưu Drive: {lastSyncTime}</span>
+                  <span className="text-emerald-300">Đã lưu: {lastSyncTime}</span>
                 ) : (
                   <span className="text-slate-300">Đồng bộ Drive</span>
                 )}
@@ -95,7 +108,7 @@ export const Header: React.FC<HeaderProps> = ({
                   onClick={onSyncNow}
                   title="Đồng bộ ngay với Google Drive"
                   disabled={isSyncing}
-                  className="p-1 rounded hover:bg-white/10 text-slate-300 hover:text-white transition disabled:opacity-50"
+                  className="p-1 rounded hover:bg-white/10 text-slate-300 hover:text-white transition disabled:opacity-50 cursor-pointer"
                 >
                   <RefreshCw className={`w-3 h-3 ${isSyncing ? 'animate-spin' : ''}`} />
                 </button>
@@ -106,14 +119,14 @@ export const Header: React.FC<HeaderProps> = ({
             <button
               onClick={onOpenDriveModal}
               title="Quản lý kết nối Google Drive và Google Apps Script"
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition shadow-sm ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition shadow-sm cursor-pointer ${
                 gasConfig.connected
                   ? 'bg-emerald-950/80 text-emerald-300 border-emerald-500/50 hover:bg-emerald-900/80'
                   : 'bg-amber-950/80 text-amber-300 border-amber-500/50 hover:bg-amber-900/80'
               }`}
             >
               <HardDrive className="w-3.5 h-3.5" />
-              <span>{gasConfig.connected ? 'Google Drive: Đã kết nối' : 'Cấu hình Google Drive'}</span>
+              <span>{gasConfig.connected ? 'Drive: Đã kết nối' : 'Cấu hình Drive'}</span>
               <span className={`w-2 h-2 rounded-full ${gasConfig.connected ? 'bg-emerald-400' : 'bg-amber-400'}`}></span>
             </button>
           </div>
@@ -129,16 +142,31 @@ export const Header: React.FC<HeaderProps> = ({
             <span className="bg-slate-800/80 px-2.5 py-1 rounded-md border border-slate-700 text-slate-300">
               Tổng số tiêu chí: <strong className="text-white">{evaluation.totalCriteriaCount}</strong>
             </span>
-            <span className="bg-slate-800/80 px-2.5 py-1 rounded-md border border-slate-700 text-slate-300">
-              Minh chứng đã lưu: <strong className="text-amber-300">{evaluation.totalEvidenceCount}</strong> tệp
-            </span>
+            <button
+              onClick={onOpenDriveEvidenceHub || onOpenDriveModal}
+              className="bg-amber-950/80 hover:bg-amber-900/80 px-2.5 py-1 rounded-md border border-amber-500/50 text-amber-200 font-semibold flex items-center gap-1.5 transition cursor-pointer"
+              title="Mở Trung tâm Quản lý & Nhận diện Minh chứng Google Drive"
+            >
+              <HardDrive className="w-3.5 h-3.5 text-amber-400" />
+              <span>Minh chứng đã lưu: <strong className="text-amber-300">{evaluation.totalEvidenceCount}</strong> tệp</span>
+            </button>
           </div>
 
           <div className="flex items-center gap-2">
+            {/* Drive Evidence Hub button */}
+            <button
+              onClick={onOpenDriveEvidenceHub || onOpenDriveModal}
+              className="flex items-center gap-1.5 bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 text-white px-3.5 py-1.5 rounded-lg text-xs font-bold shadow-md transition cursor-pointer"
+              title="Quản lý, tải lên và nhận diện tài liệu minh chứng từ Google Drive"
+            >
+              <HardDrive className="w-3.5 h-3.5 text-amber-300" />
+              <span>Minh chứng Drive ({evaluation.totalEvidenceCount})</span>
+            </button>
+
             {onOpenGitHubModal && (
               <button
                 onClick={onOpenGitHubModal}
-                className="flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-slate-100 border border-slate-600 px-3 py-1.5 rounded-lg text-xs font-semibold shadow transition"
+                className="flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-slate-100 border border-slate-600 px-3 py-1.5 rounded-lg text-xs font-semibold shadow transition cursor-pointer"
                 title="Hướng dẫn & Tiện ích chạy trực tiếp trên GitHub Pages"
               >
                 <Github className="w-3.5 h-3.5 text-white" />
@@ -148,15 +176,16 @@ export const Header: React.FC<HeaderProps> = ({
 
             <button
               onClick={onOpenDriveModal}
-              className="flex items-center gap-1.5 bg-sky-600 hover:bg-sky-500 text-white px-3 py-1.5 rounded-lg text-xs font-semibold shadow transition"
+              className="flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 px-3 py-1.5 rounded-lg text-xs font-semibold shadow transition cursor-pointer"
+              title="Cấu hình Google Apps Script & Thư mục Drive"
             >
               <CloudUpload className="w-3.5 h-3.5" />
-              Apps Script & Drive
+              <span>Apps Script</span>
             </button>
 
             <button
               onClick={onOpenReportModal}
-              className="flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 px-3.5 py-1.5 rounded-lg text-xs font-bold shadow transition"
+              className="flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 px-3.5 py-1.5 rounded-lg text-xs font-bold shadow transition cursor-pointer"
             >
               <Printer className="w-3.5 h-3.5" />
               Xuất Báo cáo Tự chấm
