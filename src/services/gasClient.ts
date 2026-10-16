@@ -3,6 +3,8 @@
  * Hỗ trợ chạy mượt mà cả trên Localhost lẫn trực tiếp trên GitHub Pages (không cần backend server)
  */
 
+import type { EvidenceFile } from '../types/cchc.ts';
+
 export interface GasResponse<T = any> {
   success: boolean;
   message?: string;
@@ -238,3 +240,99 @@ export async function loadFromLocalServerStore(): Promise<any | null> {
   }
   return null;
 }
+
+/**
+ * Trích xuất Google Drive File ID từ URL chia sẻ Drive bất kỳ
+ */
+export function extractDriveFileId(url?: string): string | null {
+  if (!url || typeof url !== 'string') return null;
+  const trimmed = url.trim();
+
+  // Pattern /file/d/{id}/
+  const dMatch = trimmed.match(/\/file\/d\/([a-zA-Z0-9_-]{15,})/);
+  if (dMatch && dMatch[1]) return dMatch[1];
+
+  // Pattern id={id}
+  const idMatch = trimmed.match(/[?&]id=([a-zA-Z0-9_-]{15,})/);
+  if (idMatch && idMatch[1]) return idMatch[1];
+
+  // Pattern open?id={id}
+  const openMatch = trimmed.match(/\/open\?id=([a-zA-Z0-9_-]{15,})/);
+  if (openMatch && openMatch[1]) return openMatch[1];
+
+  // Nếu chuỗi truyền vào chỉ gồm ký tự ID chuẩn (không có slash, dài >= 20)
+  if (/^[a-zA-Z0-9_-]{20,50}$/.test(trimmed)) {
+    return trimmed;
+  }
+
+  return null;
+}
+
+export interface DeleteDriveFileResult {
+  success: boolean;
+  deleted: boolean;
+  message: string;
+  notSupportedInScript?: boolean;
+}
+
+/**
+ * Gửi yêu cầu xóa tệp minh chứng trực tiếp trên Google Drive thông qua Google Apps Script
+ */
+export async function deleteDriveEvidenceFile(
+  file: EvidenceFile,
+  webAppUrl: string
+): Promise<DeleteDriveFileResult> {
+  const fileId = file.driveFileId || extractDriveFileId(file.driveUrl) || extractDriveFileId(file.url);
+  const fileName = file.name;
+
+  if (!webAppUrl || !webAppUrl.startsWith('http')) {
+    return {
+      success: false,
+      deleted: false,
+      message: 'Chưa cấu hình URL Google Apps Script hợp lệ để xóa tệp trên Google Drive',
+    };
+  }
+
+  try {
+    const res = await sendGasRequest(
+      webAppUrl,
+      {
+        action: 'deleteFile',
+        fileId: fileId || '',
+        fileName: fileName || '',
+      },
+      18000
+    );
+
+    if (res && res.success && res.data?.deleted) {
+      return {
+        success: true,
+        deleted: true,
+        message: res.data?.message || `Đã chuyển tệp "${fileName}" vào thùng rác trên Google Drive thành công!`,
+      };
+    }
+
+    const errStr = String(res?.error || res?.message || '');
+    if (errStr.includes('Hành động không hợp lệ') || errStr.includes('deleteFile')) {
+      return {
+        success: false,
+        deleted: false,
+        notSupportedInScript: true,
+        message: 'Phiên bản Google Apps Script hiện tại chưa cập nhật hàm deleteFile',
+      };
+    }
+
+    return {
+      success: false,
+      deleted: false,
+      message: errStr || 'Không thể xóa tệp trên Google Drive',
+    };
+  } catch (err: any) {
+    return {
+      success: false,
+      deleted: false,
+      message: `Lỗi kết nối tới Google Apps Script: ${err?.message || 'Lỗi mạng'}`,
+    };
+  }
+}
+

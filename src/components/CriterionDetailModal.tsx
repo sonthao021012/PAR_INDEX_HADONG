@@ -14,11 +14,13 @@ import {
   Calendar,
   Save,
   Eye,
-  Plus
+  Plus,
+  RefreshCw,
+  AlertTriangle
 } from 'lucide-react';
 import { CCHCSubCriterion, CCHCSection, EvidenceFile, CriterionStatus, GASConfig } from '../types/cchc.ts';
 import { validateCriterionScore, getDriveFolderPath } from '../utils/cchcRules.ts';
-import { sendGasRequest } from '../services/gasClient.ts';
+import { sendGasRequest, deleteDriveEvidenceFile, extractDriveFileId } from '../services/gasClient.ts';
 
 interface CriterionDetailModalProps {
   criterion: CCHCSubCriterion | null;
@@ -58,6 +60,12 @@ export const CriterionDetailModal: React.FC<CriterionDetailModalProps> = ({
   const [fileBase64, setFileBase64] = useState<string>('');
   const [showAddForm, setShowAddForm] = useState<boolean>(false);
   const [uploadSuccessMsg, setUploadSuccessMsg] = useState<string>('');
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deleteFeedback, setDeleteFeedback] = useState<{
+    type: 'success' | 'warning' | 'error';
+    message: string;
+    driveUrl?: string;
+  } | null>(null);
 
   const isPenalty = section.type === 'penalty';
   const isBonus = section.type === 'bonus';
@@ -188,18 +196,67 @@ export const CriterionDetailModal: React.FC<CriterionDetailModalProps> = ({
     }
   };
 
-  const handleDeleteEvidence = (id: string) => {
-    if (confirm('Bạn có chắc chắn muốn xóa tài liệu minh chứng này?')) {
-      const updated = evidenceList.filter((item) => item.id !== id);
-      setEvidenceList(updated);
-      onSaveCriterion({
-        ...criterion,
-        selfScore: validateCriterionScore(selfScore, criterion.maxScore),
-        status,
-        department,
-        notes,
-        evidenceList: updated,
+  const handleDeleteEvidence = async (id: string) => {
+    const target = evidenceList.find((item: EvidenceFile) => item.id === id);
+    if (!target) return;
+
+    const fileId = target.driveFileId || extractDriveFileId(target.driveUrl) || extractDriveFileId(target.url);
+    const driveName = target.name;
+
+    const confirmMsg = fileId || target.driveUrl
+      ? `Bạn có chắc chắn muốn xóa minh chứng "${driveName}"?\n\nHệ thống sẽ:\n1. Xóa minh chứng khỏi tiêu chí ${criterion.code}.\n2. Gửi yêu cầu xóa và chuyển tệp vào thùng rác trên Google Drive.`
+      : `Bạn có chắc chắn muốn xóa minh chứng "${driveName}" khỏi tiêu chí ${criterion.code}?`;
+
+    if (!window.confirm(confirmMsg)) {
+      return;
+    }
+
+    setDeletingId(id);
+    setDeleteFeedback(null);
+
+    let driveNotice = '';
+    const fileUrlToView = target.driveUrl || target.url;
+
+    // Gửi lệnh xóa file thực tế trên Google Drive qua Google Apps Script
+    if (gasConfig.webAppUrl) {
+      try {
+        const delRes = await deleteDriveEvidenceFile(target, gasConfig.webAppUrl);
+        if (delRes.deleted) {
+          driveNotice = `✅ Đã xóa tệp "${driveName}" và chuyển vào thùng rác trên Google Drive thành công!`;
+        } else if (delRes.notSupportedInScript) {
+          driveNotice = `ℹ️ Đã xóa thông tin minh chứng khỏi tiêu chí thành công.\n⚠️ Lưu ý: Phiên bản Apps Script hiện tại trên Drive của bạn chưa cập nhật hàm "deleteFile". Bạn hãy vào "CÀI ĐẶT HỆ THỐNG" để cập nhật mã Apps Script mới nhất, hoặc nhấp vào link tệp để xóa thủ công trên Drive.`;
+        } else {
+          driveNotice = `ℹ️ Đã xóa thông tin khỏi tiêu chí. (${delRes.message})`;
+        }
+      } catch (err: any) {
+        driveNotice = `ℹ️ Đã xóa thông tin khỏi tiêu chí. (Chưa thể kết nối Drive để xóa tệp)`;
+      }
+    }
+
+    const updated = evidenceList.filter((item: EvidenceFile) => item.id !== id);
+    setEvidenceList(updated);
+
+    // Lưu ngay thay đổi tiêu chí
+    onSaveCriterion({
+      ...criterion,
+      selfScore: validateCriterionScore(selfScore, criterion.maxScore),
+      status,
+      department,
+      notes,
+      evidenceList: updated,
+    });
+
+    setDeletingId(null);
+
+    if (driveNotice) {
+      setDeleteFeedback({
+        type: driveNotice.startsWith('✅') ? 'success' : 'warning',
+        message: driveNotice,
+        driveUrl: fileUrlToView,
       });
+      setTimeout(() => {
+        setDeleteFeedback(null);
+      }, 9000);
     }
   };
 
@@ -465,6 +522,45 @@ export const CriterionDetailModal: React.FC<CriterionDetailModalProps> = ({
               </div>
             )}
 
+            {/* Delete Feedback Banner */}
+            {deleteFeedback && (
+              <div
+                className={`p-3 rounded-xl border text-xs flex items-start justify-between gap-2.5 animate-in fade-in duration-200 ${
+                  deleteFeedback.type === 'success'
+                    ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                    : 'bg-amber-50 border-amber-200 text-amber-800'
+                }`}
+              >
+                <div className="flex items-start gap-2">
+                  {deleteFeedback.type === 'success' ? (
+                    <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                  ) : (
+                    <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                  )}
+                  <div>
+                    <p className="font-medium whitespace-pre-line">{deleteFeedback.message}</p>
+                    {deleteFeedback.driveUrl && deleteFeedback.type !== 'success' && (
+                      <a
+                        href={deleteFeedback.driveUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1 font-bold text-sky-700 underline mt-1.5 hover:text-sky-900"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" />
+                        <span>Mở vị trí tệp trên Google Drive để kiểm tra / xóa</span>
+                      </a>
+                    )}
+                  </div>
+                </div>
+                <button
+                  onClick={() => setDeleteFeedback(null)}
+                  className="p-1 rounded hover:bg-black/5 text-slate-400 hover:text-slate-600"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
+
             {/* Evidence List */}
             {evidenceList.length === 0 ? (
               <div className="text-center py-6 px-4 border-2 border-dashed border-slate-200 rounded-xl bg-slate-50/50">
@@ -476,7 +572,7 @@ export const CriterionDetailModal: React.FC<CriterionDetailModalProps> = ({
               </div>
             ) : (
               <div className="space-y-2">
-                {evidenceList.map((ev) => (
+                {evidenceList.map((ev: EvidenceFile) => (
                   <div
                     key={ev.id}
                     className="flex flex-col sm:flex-row sm:items-center justify-between p-3 rounded-xl border border-slate-200 bg-white hover:border-sky-300 transition gap-2 shadow-2xs"
@@ -519,7 +615,7 @@ export const CriterionDetailModal: React.FC<CriterionDetailModalProps> = ({
                     <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-center">
                       <button
                         onClick={() => onPreviewEvidence(ev)}
-                        className="px-2.5 py-1 text-xs font-semibold rounded bg-slate-100 text-slate-700 hover:bg-slate-200 transition flex items-center gap-1"
+                        className="px-2.5 py-1 text-xs font-semibold rounded bg-slate-100 text-slate-700 hover:bg-slate-200 transition flex items-center gap-1 cursor-pointer"
                         title="Xem trước tài liệu / ảnh"
                       >
                         <Eye className="w-3.5 h-3.5" />
@@ -530,7 +626,7 @@ export const CriterionDetailModal: React.FC<CriterionDetailModalProps> = ({
                         href={ev.driveUrl || ev.url}
                         target="_blank"
                         rel="noreferrer"
-                        className="px-2.5 py-1 text-xs font-semibold rounded bg-sky-50 text-sky-700 hover:bg-sky-100 transition flex items-center gap-1 border border-sky-200"
+                        className="px-2.5 py-1 text-xs font-semibold rounded bg-sky-50 text-sky-700 hover:bg-sky-100 transition flex items-center gap-1 border border-sky-200 cursor-pointer"
                         title="Mở tài liệu trên Google Drive"
                       >
                         <ExternalLink className="w-3.5 h-3.5" />
@@ -539,10 +635,15 @@ export const CriterionDetailModal: React.FC<CriterionDetailModalProps> = ({
 
                       <button
                         onClick={() => handleDeleteEvidence(ev.id)}
-                        className="p-1 rounded text-slate-400 hover:text-red-600 hover:bg-red-50 transition"
-                        title="Xóa minh chứng này"
+                        disabled={deletingId === ev.id}
+                        className="p-1.5 rounded text-slate-400 hover:text-red-600 hover:bg-red-50 transition cursor-pointer disabled:opacity-50"
+                        title="Xóa minh chứng này khỏi tiêu chí và Google Drive"
                       >
-                        <Trash2 className="w-3.5 h-3.5" />
+                        {deletingId === ev.id ? (
+                          <RefreshCw className="w-3.5 h-3.5 animate-spin text-red-600" />
+                        ) : (
+                          <Trash2 className="w-3.5 h-3.5" />
+                        )}
                       </button>
                     </div>
                   </div>

@@ -54,7 +54,7 @@ export const CriteriaTable: React.FC<CriteriaTableProps> = ({
           const q = searchQuery.toLowerCase();
           const matchCode = crit.code.toLowerCase().includes(q);
           const matchTitle = crit.title.toLowerCase().includes(q);
-          const matchGuide = crit.scoringGuide.toLowerCase().includes(q);
+          const matchGuide = crit.scoringGuide ? crit.scoringGuide.toLowerCase().includes(q) : false;
           const matchDept = crit.department.toLowerCase().includes(q);
           if (!matchCode && !matchTitle && !matchGuide && !matchDept) continue;
         }

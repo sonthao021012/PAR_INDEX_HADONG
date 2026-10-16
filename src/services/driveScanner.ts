@@ -420,6 +420,8 @@ export function manuallyAttachDriveFileToCriterion(
         };
 
         const updatedEvList = [newEvidence, ...(crit.evidenceList || [])];
+        const newScore = crit.selfScore === 0 ? crit.maxScore : crit.selfScore;
+        const newStatus = crit.status === 'not_started' ? ('completed' as const) : crit.status;
         return {
           ...crit,
           evidenceList: updatedEvList,

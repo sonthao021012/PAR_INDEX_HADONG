@@ -285,6 +285,51 @@ function doPost(e) {
       });
     }
 
+    // XÓA FILE MINH CHỨNG TRÊN GOOGLE DRIVE (CHUYỂN VÀO THÙNG RÁC)
+    if (action === "deleteFile" || action === "trashFile") {
+      const fileId = postData.fileId;
+      const fileName = postData.fileName;
+      let fileDeleted = false;
+      let message = "";
+
+      if (fileId && typeof fileId === "string" && fileId.trim().length > 5) {
+        try {
+          const file = DriveApp.getFileById(fileId.trim());
+          file.setTrashed(true);
+          fileDeleted = true;
+          message = "Đã chuyển tệp '" + file.getName() + "' vào thùng rác trên Google Drive thành công";
+        } catch (err) {
+          message = "Không tìm thấy hoặc không xóa được file theo ID trên Drive: " + err.toString();
+        }
+      }
+
+      if (!fileDeleted && fileName && typeof fileName === "string" && fileName.trim().length > 0) {
+        try {
+          const rootFolder = getOrCreateRootFolder();
+          const files = rootFolder.searchFiles("title = '" + fileName.trim().replace(/'/g, "\\'") + "' and trashed = false");
+          while (files.hasNext()) {
+            const f = files.next();
+            f.setTrashed(true);
+            fileDeleted = true;
+          }
+          if (fileDeleted) {
+            message = "Đã tìm thấy và chuyển tệp '" + fileName + "' vào thùng rác Google Drive";
+          } else {
+            message = "Không tìm thấy tệp có tên '" + fileName + "' trong thư mục Drive";
+          }
+        } catch (err) {
+          message = "Lỗi khi tìm kiếm tệp để xóa: " + err.toString();
+        }
+      }
+
+      return responseSuccess({
+        deleted: fileDeleted,
+        fileId: fileId,
+        fileName: fileName,
+        message: message
+      });
+    }
+
     return responseError("Hành động không hợp lệ: " + action);
   } catch (error) {
     return responseError(error.toString());

@@ -1,15 +1,15 @@
-import { ShieldCheck, CloudUpload, Printer, Download, HelpCircle, HardDrive, Sparkles, RefreshCw, CheckCircle2, Github, Flame } from 'lucide-react';
+import React from 'react';
+import { ShieldCheck, Printer, HelpCircle, HardDrive, RefreshCw, Flame, Settings, Lock } from 'lucide-react';
 import { OverallEvaluation, GASConfig } from '../types/cchc.ts';
 
 interface HeaderProps {
   evaluation: OverallEvaluation;
   gasConfig: GASConfig;
-  onOpenDriveModal: () => void;
-  onOpenDriveEvidenceHub?: () => void;
+  onOpenSystemSettings: () => void;
   onOpenReportModal: () => void;
   onOpenHelpModal: () => void;
-  onOpenGitHubModal?: () => void;
   selectedYear: number;
+  availableYears: number[];
   onChangeYear: (year: number) => void;
   isSyncing?: boolean;
   lastSyncTime?: string;
@@ -20,12 +20,11 @@ interface HeaderProps {
 export const Header: React.FC<HeaderProps> = ({
   evaluation,
   gasConfig,
-  onOpenDriveModal,
-  onOpenDriveEvidenceHub,
+  onOpenSystemSettings,
   onOpenReportModal,
   onOpenHelpModal,
-  onOpenGitHubModal,
   selectedYear,
+  availableYears = [2026],
   onChangeYear,
   isSyncing = false,
   lastSyncTime = '',
@@ -61,23 +60,32 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
           </div>
 
-          {/* Quick status & Year toggle */}
+          {/* Quick status & Year display */}
           <div className="flex items-center flex-wrap gap-2 sm:gap-3">
-            <div className="flex items-center bg-black/30 rounded-lg p-1 border border-white/10">
+            {/* Evaluation Year: shows 2026 as active base year, or switcher if user created next years */}
+            <div className="flex items-center bg-black/40 rounded-lg p-1 border border-amber-500/40 text-xs">
               <span className="text-xs text-slate-300 px-2 font-medium">Năm đánh giá:</span>
-              {[2026, 2025].map((year) => (
-                <button
-                  key={year}
-                  onClick={() => onChangeYear(year)}
-                  className={`text-xs px-2.5 py-1 rounded font-semibold transition ${
-                    selectedYear === year
-                      ? 'bg-amber-500 text-slate-950 shadow-sm'
-                      : 'text-slate-200 hover:text-white hover:bg-white/10'
-                  }`}
-                >
-                  {year}
-                </button>
-              ))}
+              {availableYears.length <= 1 ? (
+                <span className="text-xs px-2.5 py-1 rounded bg-amber-500 text-slate-950 font-bold shadow-xs">
+                  2026 (Hiện hành)
+                </span>
+              ) : (
+                <div className="flex items-center gap-1">
+                  {availableYears.map((year) => (
+                    <button
+                      key={year}
+                      onClick={() => onChangeYear(year)}
+                      className={`text-xs px-2 py-1 rounded font-semibold transition cursor-pointer ${
+                        selectedYear === year
+                          ? 'bg-amber-500 text-slate-950 shadow-sm font-bold'
+                          : 'text-slate-200 hover:text-white hover:bg-white/10'
+                      }`}
+                    >
+                      {year} {year === 2026 ? '(Hiện hành)' : ''}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Firebase Real-time Firestore Sync Badge */}
@@ -114,21 +122,6 @@ export const Header: React.FC<HeaderProps> = ({
                 </button>
               )}
             </div>
-
-            {/* Google Drive Status badge button */}
-            <button
-              onClick={onOpenDriveModal}
-              title="Quản lý kết nối Google Drive và Google Apps Script"
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition shadow-sm cursor-pointer ${
-                gasConfig.connected
-                  ? 'bg-emerald-950/80 text-emerald-300 border-emerald-500/50 hover:bg-emerald-900/80'
-                  : 'bg-amber-950/80 text-amber-300 border-amber-500/50 hover:bg-amber-900/80'
-              }`}
-            >
-              <HardDrive className="w-3.5 h-3.5" />
-              <span>{gasConfig.connected ? 'Drive: Đã kết nối' : 'Cấu hình Drive'}</span>
-              <span className={`w-2 h-2 rounded-full ${gasConfig.connected ? 'bg-emerald-400' : 'bg-amber-400'}`}></span>
-            </button>
           </div>
         </div>
 
@@ -143,9 +136,9 @@ export const Header: React.FC<HeaderProps> = ({
               Tổng số tiêu chí: <strong className="text-white">{evaluation.totalCriteriaCount}</strong>
             </span>
             <button
-              onClick={onOpenDriveEvidenceHub || onOpenDriveModal}
+              onClick={onOpenSystemSettings}
               className="bg-amber-950/80 hover:bg-amber-900/80 px-2.5 py-1 rounded-md border border-amber-500/50 text-amber-200 font-semibold flex items-center gap-1.5 transition cursor-pointer"
-              title="Mở Trung tâm Quản lý & Nhận diện Minh chứng Google Drive"
+              title="Mở Quản lý minh chứng Google Drive trong Cài đặt Hệ thống"
             >
               <HardDrive className="w-3.5 h-3.5 text-amber-400" />
               <span>Minh chứng đã lưu: <strong className="text-amber-300">{evaluation.totalEvidenceCount}</strong> tệp</span>
@@ -153,36 +146,18 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
 
           <div className="flex items-center gap-2">
-            {/* Drive Evidence Hub button */}
+            {/* Unified System Settings button - Password Protected */}
             <button
-              onClick={onOpenDriveEvidenceHub || onOpenDriveModal}
-              className="flex items-center gap-1.5 bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 text-white px-3.5 py-1.5 rounded-lg text-xs font-bold shadow-md transition cursor-pointer"
-              title="Quản lý, tải lên và nhận diện tài liệu minh chứng từ Google Drive"
+              onClick={onOpenSystemSettings}
+              className="flex items-center gap-1.5 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 hover:from-slate-800 hover:to-indigo-900 text-white border border-indigo-400/60 px-3.5 py-1.5 rounded-lg text-xs font-bold shadow-md transition cursor-pointer group"
+              title="Quản lý Minh chứng Drive, GitHub Pages, Apps Script & Tạo năm đánh giá mới (Yêu cầu mật khẩu)"
             >
-              <HardDrive className="w-3.5 h-3.5 text-amber-300" />
-              <span>Minh chứng Drive ({evaluation.totalEvidenceCount})</span>
+              <Settings className="w-3.5 h-3.5 text-amber-300 group-hover:rotate-45 transition-transform" />
+              <span>CÀI ĐẶT HỆ THỐNG</span>
+              <Lock className="w-3 h-3 text-slate-400 ml-0.5" />
             </button>
 
-            {onOpenGitHubModal && (
-              <button
-                onClick={onOpenGitHubModal}
-                className="flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-slate-100 border border-slate-600 px-3 py-1.5 rounded-lg text-xs font-semibold shadow transition cursor-pointer"
-                title="Hướng dẫn & Tiện ích chạy trực tiếp trên GitHub Pages"
-              >
-                <Github className="w-3.5 h-3.5 text-white" />
-                <span>GitHub Pages</span>
-              </button>
-            )}
-
-            <button
-              onClick={onOpenDriveModal}
-              className="flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 px-3 py-1.5 rounded-lg text-xs font-semibold shadow transition cursor-pointer"
-              title="Cấu hình Google Apps Script & Thư mục Drive"
-            >
-              <CloudUpload className="w-3.5 h-3.5" />
-              <span>Apps Script</span>
-            </button>
-
+            {/* Print / Export Report button */}
             <button
               onClick={onOpenReportModal}
               className="flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 px-3.5 py-1.5 rounded-lg text-xs font-bold shadow transition cursor-pointer"
@@ -191,10 +166,11 @@ export const Header: React.FC<HeaderProps> = ({
               Xuất Báo cáo Tự chấm
             </button>
 
+            {/* Help Button */}
             <button
               onClick={onOpenHelpModal}
               title="Hướng dẫn sử dụng"
-              className="p-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-white/10 transition"
+              className="p-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-white/10 transition cursor-pointer"
               aria-label="Hướng dẫn sử dụng"
             >
               <HelpCircle className="w-4 h-4" />

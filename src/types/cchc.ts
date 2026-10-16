@@ -25,7 +25,7 @@ export interface CCHCSubCriterion {
   status: CriterionStatus;
   department: string;
   deadline?: string;
-  scoringGuide: string;
+  scoringGuide?: string;
   notes?: string;
   evidenceList: EvidenceFile[];
 }

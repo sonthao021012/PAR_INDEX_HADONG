@@ -42,8 +42,8 @@ export const PasswordPromptModal: React.FC<PasswordPromptModalProps> = ({
               <Lock className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="font-bold text-sm sm:text-base">Xác Thực Quản Trị Viên</h3>
-              <p className="text-[11px] text-slate-400">Bảo mật cấu hình Apps Script & Google Drive</p>
+              <h3 className="font-bold text-sm sm:text-base">Cài Đặt Hệ Thống — Quản Trị Viên</h3>
+              <p className="text-[11px] text-slate-400">Minh chứng Drive, Apps Script, GitHub Pages & Năm đánh giá</p>
             </div>
           </div>
           <button
@@ -57,7 +57,7 @@ export const PasswordPromptModal: React.FC<PasswordPromptModalProps> = ({
         {/* Modal Body */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div className="text-xs text-slate-600 leading-relaxed">
-            Khu vực quản lý liên kết Google Apps Script và đồng bộ cấu trúc cây thư mục Google Drive của UBND phường Hội An Đông yêu cầu mật khẩu phân quyền:
+            Mục <strong>CÀI ĐẶT HỆ THỐNG</strong> chứa cấu hình nhạy cảm (Google Drive, Apps Script, GitHub Pages và tạo năm đánh giá mới). Vui lòng nhập mật khẩu quản trị để tiếp tục:
           </div>
 
           <div>
