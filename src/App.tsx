@@ -93,14 +93,33 @@ export default function App() {
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
   const [lastSyncTime, setLastSyncTime] = useState<string>('');
   const [isGitHubModalOpen, setIsGitHubModalOpen] = useState<boolean>(false);
+  const [syncNotification, setSyncNotification] = useState<{ id: string; text: string; type: 'success' | 'info' } | null>(null);
+
   const isInitialMount = useRef<boolean>(true);
+  const isInitialLoadCompleteRef = useRef<boolean>(false);
+  const isSyncingRef = useRef<boolean>(false);
+  const lastLocalUpdateRef = useRef<number>(Date.now());
+
+  // Keep isSyncingRef in sync with state
+  useEffect(() => {
+    isSyncingRef.current = isSyncing;
+  }, [isSyncing]);
+
+  // Auto-dismiss sync notifications after 4 seconds
+  useEffect(() => {
+    if (!syncNotification) return;
+    const timer = setTimeout(() => {
+      setSyncNotification(null);
+    }, 4000);
+    return () => clearTimeout(timer);
+  }, [syncNotification]);
 
   // Computed Evaluation
   const evaluation = useMemo(() => {
     return calculateOverallEvaluation(sections);
   }, [sections]);
 
-  // Real-time synchronization function to Drive & local storage / local server cache
+  // Real-time synchronization function to Drive & Shared Server Store across all machines
   const syncWithDrive = async (
     currentSections: CCHCSection[],
     currentLogs: ChangeLogEntry[],
@@ -109,9 +128,12 @@ export default function App() {
     isManual: boolean = false
   ) => {
     setIsSyncing(true);
+    isSyncingRef.current = true;
     try {
       const timeStr = new Date().toLocaleTimeString('vi-VN');
       const timestampIso = new Date().toISOString();
+      const timestampMs = Date.now();
+      lastLocalUpdateRef.current = timestampMs;
 
       const evaluationSummary = calculateOverallEvaluation(currentSections);
 
@@ -120,15 +142,28 @@ export default function App() {
         changeLog: currentLogs.slice(0, 50),
         evaluation: evaluationSummary,
         lastUpdated: timestampIso,
+        lastUpdatedTimestamp: timestampMs,
         updatedBy: 'UBND Phường Hội An Đông',
         note: reason,
         criterionCode: criterionCode || 'TOÀN BỘ',
       };
 
-      // 1. Save to local server persistent sync store (if dev server available, silently skipped on GitHub Pages)
+      // 1. Broadcast to any other open tabs on this machine immediately (<5ms)
+      try {
+        if (typeof BroadcastChannel !== 'undefined') {
+          const ch = new BroadcastChannel('cchc_sync_channel');
+          ch.postMessage({
+            type: 'LOCAL_SYNC_UPDATE',
+            data: stateData,
+          });
+          ch.close();
+        }
+      } catch (_) {}
+
+      // 2. Save to shared server store (immediately accessible by any other computer on the network/URL)
       await saveToLocalServerStore(stateData);
 
-      // 2. Save directly into Google Drive via Google Apps Script (uploadFile action)
+      // 3. Save directly into Google Drive via Google Apps Script (uploadFile & syncData)
       if (gasConfig.webAppUrl) {
         try {
           const jsonString = JSON.stringify(stateData, null, 2);
@@ -143,7 +178,7 @@ export default function App() {
             sectionName: 'Nhat_Ky_He_Thong',
             criterionCode: 'LOG',
             note: reason,
-          });
+          }, 15000);
 
           if (uploadRes && uploadRes.success && uploadRes.data?.fileId) {
             setDriveFileId(uploadRes.data.fileId);
@@ -156,15 +191,17 @@ export default function App() {
               action: 'syncData',
               sections: currentSections,
               evaluation: evaluationSummary,
+              lastUpdated: timestampIso,
+              lastUpdatedTimestamp: timestampMs,
               note: reason,
               criterionCode: criterionCode || 'TOÀN BỘ',
               updatedBy: 'UBND Phường Hội An Đông',
-            });
+            }, 10000);
           } catch (_) {
             // Optional syncData
           }
         } catch (e) {
-          console.warn('GAS sync warning:', e);
+          console.warn('Google Drive sync warning:', e);
         }
       }
 
@@ -175,19 +212,28 @@ export default function App() {
       setChangeLog((prev) =>
         prev.map((entry) => ({ ...entry, driveSynced: true }))
       );
+
+      if (isManual) {
+        setSyncNotification({
+          id: 'manual-' + Date.now(),
+          text: `✅ Đã đồng bộ thành công trên tất cả thiết bị và Google Drive (${timeStr})`,
+          type: 'success',
+        });
+      }
     } catch (err) {
       console.warn('Lỗi đồng bộ:', err);
     } finally {
       setIsSyncing(false);
+      isSyncingRef.current = false;
     }
   };
 
-  // On App startup: check for previous user updates from local server store or Drive
+  // 1. Initial Data Load on App Startup (from shared server store or Drive)
   useEffect(() => {
     let isMounted = true;
-    const fetchPreviousUpdates = async () => {
+    const fetchInitialData = async () => {
       try {
-        // 1. Try to fetch from server store first (instant load if dev server running)
+        // A. Load from shared server store first (instant multi-device sync)
         const storeData = await loadFromLocalServerStore();
         if (storeData && storeData.sections && Array.isArray(storeData.sections) && storeData.sections.length > 0) {
           if (isMounted) {
@@ -195,35 +241,175 @@ export default function App() {
             if (Array.isArray(storeData.changeLog)) {
               setChangeLog(storeData.changeLog);
             }
+            const remoteTime = storeData.lastUpdatedTimestamp || (storeData.lastUpdated ? new Date(storeData.lastUpdated).getTime() : Date.now());
+            lastLocalUpdateRef.current = remoteTime;
             const syncTime = storeData.lastUpdated
               ? new Date(storeData.lastUpdated).toLocaleTimeString('vi-VN')
               : new Date().toLocaleTimeString('vi-VN');
             setLastSyncTime(syncTime);
+            isInitialLoadCompleteRef.current = true;
             return;
           }
         }
 
-        // 2. Also check if there is a saved file in Google Drive via Apps Script
+        // B. If server store is empty/not present, check Google Apps Script / Drive
         if (gasConfig.webAppUrl) {
-          const gasRes = await sendGasRequest(gasConfig.webAppUrl, { action: 'getData' });
+          const gasRes = await sendGasRequest(gasConfig.webAppUrl, { action: 'getData' }, 12000);
           if (gasRes && gasRes.success && gasRes.data?.sections && Array.isArray(gasRes.data.sections)) {
             if (isMounted) {
               setSections(gasRes.data.sections);
               if (Array.isArray(gasRes.data.changeLog)) {
                 setChangeLog(gasRes.data.changeLog);
               }
+              const remoteTime = gasRes.data.lastUpdatedTimestamp || (gasRes.data.lastUpdated ? new Date(gasRes.data.lastUpdated).getTime() : Date.now());
+              lastLocalUpdateRef.current = remoteTime;
               setLastSyncTime(new Date().toLocaleTimeString('vi-VN'));
+              isInitialLoadCompleteRef.current = true;
+              return;
             }
           }
         }
       } catch (e) {
-        console.warn('Không thể nạp dữ liệu từ remote sync lúc khởi động:', e);
+        console.warn('Không thể nạp dữ liệu lúc khởi động:', e);
+      } finally {
+        if (isMounted) {
+          isInitialLoadCompleteRef.current = true;
+        }
       }
     };
 
-    fetchPreviousUpdates();
-    return () => { isMounted = false; };
+    fetchInitialData();
+    return () => {
+      isMounted = false;
+    };
   }, []);
+
+  // 2. Real-time Cross-Tab Synchronization (BroadcastChannel)
+  useEffect(() => {
+    if (typeof BroadcastChannel === 'undefined') return;
+    const channel = new BroadcastChannel('cchc_sync_channel');
+    channel.onmessage = (event) => {
+      if (event.data && event.data.type === 'LOCAL_SYNC_UPDATE') {
+        const payload = event.data.data;
+        if (payload && payload.sections && Array.isArray(payload.sections)) {
+          const updateTime = payload.lastUpdatedTimestamp || Date.now();
+          if (updateTime > lastLocalUpdateRef.current) {
+            lastLocalUpdateRef.current = updateTime;
+            setSections(payload.sections);
+            if (Array.isArray(payload.changeLog)) {
+              setChangeLog(payload.changeLog);
+            }
+            const timeStr = payload.lastUpdated
+              ? new Date(payload.lastUpdated).toLocaleTimeString('vi-VN')
+              : new Date().toLocaleTimeString('vi-VN');
+            setLastSyncTime(timeStr);
+            setSyncNotification({
+              id: 'toast-' + Date.now(),
+              text: `⚡ Dữ liệu vừa được đồng bộ tức thì từ tab khác (${timeStr})`,
+              type: 'info',
+            });
+          }
+        }
+      }
+    };
+    return () => {
+      channel.close();
+    };
+  }, []);
+
+  // 3. Continuous Real-time Background Sync Across Different Machines & Devices
+  useEffect(() => {
+    let pollTimer: NodeJS.Timeout;
+    let isCancelled = false;
+
+    const syncWithNetworkDevices = async () => {
+      // Don't poll while saving or before initial load
+      if (isSyncingRef.current || !isInitialLoadCompleteRef.current) return;
+
+      try {
+        // A. Poll shared server store (works across all computers accessing this URL)
+        const remoteStore = await loadFromLocalServerStore();
+        if (remoteStore && remoteStore.sections && Array.isArray(remoteStore.sections) && remoteStore.sections.length > 0) {
+          const remoteTimestamp = remoteStore.lastUpdatedTimestamp || (remoteStore.lastUpdated ? new Date(remoteStore.lastUpdated).getTime() : 0);
+
+          // If remote store is strictly newer by at least 800ms
+          if (remoteTimestamp > lastLocalUpdateRef.current + 800) {
+            if (!isCancelled) {
+              lastLocalUpdateRef.current = remoteTimestamp;
+              setSections(remoteStore.sections);
+              if (Array.isArray(remoteStore.changeLog)) {
+                setChangeLog(remoteStore.changeLog);
+              }
+              const syncTime = remoteStore.lastUpdated
+                ? new Date(remoteStore.lastUpdated).toLocaleTimeString('vi-VN')
+                : new Date().toLocaleTimeString('vi-VN');
+              setLastSyncTime(syncTime);
+              setSyncNotification({
+                id: 'toast-' + Date.now(),
+                text: `⚡ Đã tự động cập nhật dữ liệu mới nhất từ thiết bị khác (${syncTime})`,
+                type: 'success',
+              });
+              return;
+            }
+          }
+        }
+
+        // B. Fallback poll via Google Apps Script (when deployed on static GitHub Pages)
+        if (gasConfig.webAppUrl) {
+          const gasRes = await sendGasRequest(gasConfig.webAppUrl, { action: 'getData' }, 10000);
+          if (gasRes && gasRes.success && gasRes.data?.sections && Array.isArray(gasRes.data.sections)) {
+            const remoteTimestamp = gasRes.data.lastUpdatedTimestamp || (gasRes.data.lastUpdated ? new Date(gasRes.data.lastUpdated).getTime() : Date.now());
+            if (remoteTimestamp > lastLocalUpdateRef.current + 1500) {
+              if (!isCancelled) {
+                lastLocalUpdateRef.current = remoteTimestamp;
+                setSections(gasRes.data.sections);
+                if (Array.isArray(gasRes.data.changeLog)) {
+                  setChangeLog(gasRes.data.changeLog);
+                }
+                const syncTime = new Date().toLocaleTimeString('vi-VN');
+                setLastSyncTime(syncTime);
+                setSyncNotification({
+                  id: 'toast-' + Date.now(),
+                  text: `⚡ Dữ liệu vừa được đồng bộ tự động từ Google Drive (${syncTime})`,
+                  type: 'success',
+                });
+              }
+            }
+          }
+        }
+      } catch (err) {
+        // Yên lặng xử lý lỗi nền
+      }
+    };
+
+    const schedulePoll = () => {
+      // Poll faster (every 5 seconds) when tab is active, every 20 seconds when in background
+      const intervalMs = typeof document !== 'undefined' && document.visibilityState === 'visible' ? 5000 : 20000;
+      pollTimer = setTimeout(async () => {
+        await syncWithNetworkDevices();
+        if (!isCancelled) schedulePoll();
+      }, intervalMs);
+    };
+
+    schedulePoll();
+
+    // Trigger immediate sync whenever the user switches back to this browser tab
+    const handleFocusOrVisible = () => {
+      if (document.visibilityState === 'visible') {
+        syncWithNetworkDevices();
+      }
+    };
+
+    window.addEventListener('focus', handleFocusOrVisible);
+    document.addEventListener('visibilitychange', handleFocusOrVisible);
+
+    return () => {
+      isCancelled = true;
+      clearTimeout(pollTimer);
+      window.removeEventListener('focus', handleFocusOrVisible);
+      document.removeEventListener('visibilitychange', handleFocusOrVisible);
+    };
+  }, [gasConfig.webAppUrl]);
 
   // Save changes to localStorage immediately
   useEffect(() => {
@@ -250,10 +436,15 @@ export default function App() {
     }
   }, [changeLog]);
 
-  // Debounced real-time sync to Drive when sections or changeLog are updated
+  // Debounced auto-save to Drive & Shared Store when user modifies sections
   useEffect(() => {
     if (isInitialMount.current) {
       isInitialMount.current = false;
+      return;
+    }
+
+    // Protect against overwriting remote data during initial page load
+    if (!isInitialLoadCompleteRef.current) {
       return;
     }
 
@@ -263,22 +454,30 @@ export default function App() {
     return () => clearTimeout(timer);
   }, [sections]);
 
-  // Manual Reload from Drive handler
+  // Manual Reload from Drive / Shared Store handler
   const handleReloadFromDrive = async () => {
     setIsSyncing(true);
     try {
-      // 1. Fetch from server store if available
+      // 1. Fetch from shared server store first
       const storeData = await loadFromLocalServerStore();
       if (storeData && storeData.sections && Array.isArray(storeData.sections)) {
         setSections(storeData.sections);
         if (Array.isArray(storeData.changeLog)) {
           setChangeLog(storeData.changeLog);
         }
-        setLastSyncTime(new Date().toLocaleTimeString('vi-VN'));
+        const syncTime = storeData.lastUpdated
+          ? new Date(storeData.lastUpdated).toLocaleTimeString('vi-VN')
+          : new Date().toLocaleTimeString('vi-VN');
+        setLastSyncTime(syncTime);
+        setSyncNotification({
+          id: 'reload-' + Date.now(),
+          text: `✅ Đã tải lại dữ liệu mới nhất từ máy chủ chia sẻ (${syncTime})`,
+          type: 'success',
+        });
         return;
       }
 
-      // 2. If gasConfig is connected, query GAS directly / via proxy
+      // 2. Query GAS / Drive directly
       if (gasConfig.webAppUrl) {
         const data = await sendGasRequest(gasConfig.webAppUrl, { action: 'getData' });
         if (data && data.success && data.data?.sections) {
@@ -286,7 +485,13 @@ export default function App() {
           if (Array.isArray(data.data.changeLog)) {
             setChangeLog(data.data.changeLog);
           }
-          setLastSyncTime(new Date().toLocaleTimeString('vi-VN'));
+          const syncTime = new Date().toLocaleTimeString('vi-VN');
+          setLastSyncTime(syncTime);
+          setSyncNotification({
+            id: 'reload-' + Date.now(),
+            text: `✅ Đã tải lại dữ liệu mới nhất từ Google Drive (${syncTime})`,
+            type: 'success',
+          });
         }
       }
     } catch (err) {
@@ -572,6 +777,26 @@ export default function App() {
         evaluation={evaluation}
         onRestoreData={handleRestoreData}
       />
+
+      {/* Floating Real-time Sync Toast Notification */}
+      {syncNotification && (
+        <div className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 px-4 py-3 rounded-xl shadow-2xl border text-xs font-semibold backdrop-blur-md animate-in fade-in slide-in-from-bottom-5 duration-200 ${
+          syncNotification.type === 'success'
+            ? 'bg-emerald-950/90 text-emerald-200 border-emerald-500/50'
+            : 'bg-sky-950/90 text-sky-200 border-sky-500/50'
+        }`}>
+          <span className={`w-2.5 h-2.5 rounded-full ${
+            syncNotification.type === 'success' ? 'bg-emerald-400' : 'bg-sky-400'
+          } animate-pulse shrink-0`}></span>
+          <span className="max-w-xs sm:max-w-md">{syncNotification.text}</span>
+          <button
+            onClick={() => setSyncNotification(null)}
+            className="ml-2 p-1 rounded hover:bg-white/10 text-slate-400 hover:text-white transition"
+          >
+            ✕
+          </button>
+        </div>
+      )}
     </div>
   );
 }

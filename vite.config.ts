@@ -13,6 +13,19 @@ function gasProxyPlugin(): Plugin {
       server.middlewares.use(async (req, res, next) => {
         // Local Server Sync Store endpoint for guaranteed persistence across devices & reloads
         if (req.url && req.url.startsWith('/api/drive-sync-store')) {
+          res.setHeader('Access-Control-Allow-Origin', '*');
+          res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+          res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+          res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+          res.setHeader('Pragma', 'no-cache');
+          res.setHeader('Expires', '0');
+
+          if (req.method === 'OPTIONS') {
+            res.statusCode = 204;
+            res.end();
+            return;
+          }
+
           if (req.method === 'GET') {
             try {
               if (fs.existsSync(SYNC_CACHE_FILE)) {
@@ -39,6 +52,7 @@ function gasProxyPlugin(): Plugin {
                 res.end(JSON.stringify({ success: true, savedAt: new Date().toISOString() }));
               } catch (e) {
                 res.statusCode = 500;
+                res.setHeader('Content-Type', 'application/json');
                 res.end(JSON.stringify({ success: false, error: String(e) }));
               }
             });

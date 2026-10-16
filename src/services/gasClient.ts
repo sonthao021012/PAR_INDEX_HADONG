@@ -11,11 +11,11 @@ export interface GasResponse<T = any> {
   offlineFallback?: boolean;
 }
 
-// Kiểm tra xem ứng dụng có đang chạy trên GitHub Pages hoặc môi trường tĩnh không
+// Kiểm tra xem ứng dụng có đang chạy trên GitHub Pages hoặc môi trường hosting hoàn toàn tĩnh không
 export function isStaticOrGitHub(): boolean {
   if (typeof window === 'undefined') return false;
   const host = window.location.hostname;
-  return host.includes('github.io') || host.includes('pages.dev') || host.includes('vercel.app') || (host !== 'localhost' && host !== '127.0.0.1');
+  return host.includes('github.io') || host.includes('pages.dev');
 }
 
 /**
@@ -33,11 +33,11 @@ export async function sendGasRequest(
 
   const isStatic = isStaticOrGitHub();
 
-  // 1. Thử qua local proxy trước nếu không phải là GitHub Pages
+  // 1. Thử qua server proxy trước nếu không phải là GitHub Pages tĩnh
   if (!isStatic) {
     try {
       const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), timeoutMs);
+      const timer = setTimeout(() => controller.abort(), Math.min(timeoutMs, 15000));
 
       const proxyRes = await fetch('/api/gas-proxy', {
         method: 'POST',
@@ -56,12 +56,12 @@ export async function sendGasRequest(
         return data;
       }
     } catch (proxyErr) {
-      // Proxy thất bại hoặc 404 (chạy tĩnh), chuyển sang gọi trực tiếp
-      console.warn('Local proxy không khả dụng, chuyển sang gọi trực tiếp GAS:', proxyErr);
+      // Proxy không khả dụng hoặc lỗi mạng, tự động chuyển sang gọi trực tiếp
+      console.warn('Server proxy không phản hồi, chuyển sang gọi trực tiếp Google Apps Script:', proxyErr);
     }
   }
 
-  // 2. Gọi trực tiếp tới Google Apps Script (Hoạt động 100% trên GitHub Pages)
+  // 2. Gọi trực tiếp tới Google Apps Script (Hoạt động 100% trên GitHub Pages & trình duyệt)
   try {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -90,9 +90,9 @@ export async function sendGasRequest(
       };
     }
   } catch (directErr: any) {
-    console.warn('Direct fetch gặp lỗi, thử gửi ở chế độ no-cors:', directErr);
+    console.warn('Direct fetch gặp lỗi CORS/redirect, thử gửi ở chế độ no-cors:', directErr);
 
-    // 3. Fallback no-cors để đảm bảo dữ liệu ghi vào Drive vẫn thành công
+    // 3. Fallback no-cors để đảm bảo dữ liệu ghi vào Drive vẫn được thực hiện
     try {
       await fetch(webAppUrl, {
         method: 'POST',
@@ -131,7 +131,7 @@ export async function getGasData(
 
   const isStatic = isStaticOrGitHub();
 
-  // 1. Thử local proxy nếu đang ở dev server
+  // 1. Thử server proxy nếu có
   if (!isStatic) {
     try {
       const query = new URLSearchParams({ targetUrl: webAppUrl, action, ...params }).toString();
@@ -176,39 +176,60 @@ export async function getGasData(
 }
 
 /**
- * Lưu dữ liệu vào cache máy chủ cục bộ (nếu có).
- * Khi chạy trên GitHub Pages, hàm tự động bỏ qua để không gây lỗi 404.
+ * Lưu dữ liệu vào cache máy chủ chia sẻ dùng chung giữa mọi máy tính và trình duyệt.
+ * Tự động bỏ qua an toàn khi chạy trên GitHub Pages tĩnh hoàn toàn.
  */
-export async function saveToLocalServerStore(stateData: any): Promise<void> {
-  if (isStaticOrGitHub()) {
-    // Trên GitHub Pages, chỉ cần dùng localStorage và Google Drive
-    return;
+export async function saveToLocalServerStore(stateData: any): Promise<boolean> {
+  if (typeof window !== 'undefined' && window.location.hostname.includes('github.io')) {
+    return false;
   }
 
   try {
-    await fetch('/api/drive-sync-store', {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 6000);
+
+    const res = await fetch('/api/drive-sync-store', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+      },
       body: JSON.stringify(stateData),
+      signal: controller.signal,
     });
+
+    clearTimeout(timer);
+    return res.ok;
   } catch (_) {
-    // Yên lặng bỏ qua nếu server dev không có endpoint này
+    return false;
   }
 }
 
 /**
- * Tải dữ liệu từ cache máy chủ cục bộ (nếu có).
+ * Tải dữ liệu dùng chung từ máy chủ chia sẻ.
+ * Bất kỳ máy tính nào truy cập đường link ứng dụng đều đọc được dữ liệu mới nhất này.
  */
 export async function loadFromLocalServerStore(): Promise<any | null> {
-  if (isStaticOrGitHub()) {
+  if (typeof window !== 'undefined' && window.location.hostname.includes('github.io')) {
     return null;
   }
 
   try {
-    const res = await fetch('/api/drive-sync-store');
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 5000);
+
+    const res = await fetch('/api/drive-sync-store', {
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+      },
+      signal: controller.signal,
+    });
+
+    clearTimeout(timer);
+
     if (res.ok) {
       const data = await res.json();
-      if (data && data.sections) {
+      if (data && data.sections && Array.isArray(data.sections) && data.sections.length > 0) {
         return data;
       }
     }
