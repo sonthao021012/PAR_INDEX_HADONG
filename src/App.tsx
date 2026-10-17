@@ -126,6 +126,9 @@ export default function App() {
   const isInitialLoadCompleteRef = useRef<boolean>(false);
   const isSyncingRef = useRef<boolean>(false);
   const lastLocalUpdateRef = useRef<number>(Date.now());
+  const clientSessionId = useRef<string>(
+    'sess-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8)
+  );
 
   // Keep isSyncingRef in sync with state
   useEffect(() => {
@@ -150,7 +153,7 @@ export default function App() {
   const syncWithDrive = async (
     currentSections: CCHCSection[],
     currentLogs: ChangeLogEntry[],
-    reason: string = 'Tự động lưu thay đổi',
+    reason: string = 'Lưu và đồng bộ dữ liệu',
     criterionCode?: string,
     isManual: boolean = false
   ) => {
@@ -174,6 +177,7 @@ export default function App() {
         updatedBy: 'UBND Phường Hội An Đông',
         note: reason,
         criterionCode: criterionCode || 'TOÀN BỘ',
+        senderSessionId: clientSessionId.current,
       };
 
       // 1. Broadcast to any other open tabs on this machine immediately (<5ms)
@@ -483,6 +487,11 @@ export default function App() {
     const unsub = subscribeToFirebaseSync(
       (remoteData) => {
         if (remoteData && remoteData.sections && Array.isArray(remoteData.sections) && remoteData.sections.length > 0) {
+          // Bỏ qua nếu gói tin do chính phiên làm việc hiện tại gửi lên (tránh giật màn hình hoặc reload lặp)
+          if (remoteData.senderSessionId && remoteData.senderSessionId === clientSessionId.current) {
+            return;
+          }
+
           const remoteTime = remoteData.lastUpdatedTimestamp || (remoteData.lastUpdated ? new Date(remoteData.lastUpdated).getTime() : 0);
           if (remoteTime > lastLocalUpdateRef.current + 400) {
             lastLocalUpdateRef.current = remoteTime;
@@ -527,6 +536,11 @@ export default function App() {
     channel.onmessage = (event) => {
       if (event.data && event.data.type === 'LOCAL_SYNC_UPDATE') {
         const payload = event.data.data;
+        // Bỏ qua nếu tin nhắn do chính tab này phát ra
+        if (payload && payload.senderSessionId && payload.senderSessionId === clientSessionId.current) {
+          return;
+        }
+
         if (payload && payload.sections && Array.isArray(payload.sections)) {
           const updateTime = payload.lastUpdatedTimestamp || Date.now();
           if (updateTime > lastLocalUpdateRef.current) {
@@ -577,22 +591,6 @@ export default function App() {
       console.error('Lỗi lưu changelog vào localStorage:', e);
     }
   }, [changeLog, selectedYear]);
-
-  // Debounced auto-save to Drive & Shared Store when user modifies sections
-  useEffect(() => {
-    if (isInitialMount.current) {
-      isInitialMount.current = false;
-      return;
-    }
-    if (!isInitialLoadCompleteRef.current) {
-      return;
-    }
-
-    const timer = setTimeout(() => {
-      syncWithDrive(sections, changeLog, 'Tự động lưu thay đổi theo thời gian thực');
-    }, 1500);
-    return () => clearTimeout(timer);
-  }, [sections]);
 
   // Manual Reload from Drive / Shared Store handler
   const handleReloadFromDrive = async () => {
@@ -692,12 +690,13 @@ export default function App() {
     }
   };
 
-  // Full Criterion Save
-  const handleSaveCriterion = (updatedCriterion: CCHCSubCriterion) => {
+  // Full Criterion Save & Instant Multi-Device Sync
+  const handleSaveCriterion = async (updatedCriterion: CCHCSubCriterion) => {
     let oldCrit: CCHCSubCriterion | null = null;
 
-    setSections((prevSections) =>
-      prevSections.map((sec) => ({
+    let updatedSections: CCHCSection[] = [];
+    setSections((prevSections) => {
+      updatedSections = prevSections.map((sec) => ({
         ...sec,
         criteria: sec.criteria.map((crit) => {
           if (crit.id === updatedCriterion.id) {
@@ -706,8 +705,9 @@ export default function App() {
           }
           return crit;
         }),
-      }))
-    );
+      }));
+      return updatedSections;
+    });
 
     const logEntry: ChangeLogEntry = {
       id: 'log-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6),
@@ -724,7 +724,23 @@ export default function App() {
       driveSynced: false,
     };
 
-    setChangeLog((prev) => [logEntry, ...prev.slice(0, 49)]);
+    const updatedLogs = [logEntry, ...changeLog.slice(0, 49)];
+    setChangeLog(updatedLogs);
+
+    // Lưu vào bộ nhớ cục bộ ngay lập tức
+    try {
+      localStorage.setItem(`cchc_hoi_an_dong_sections_${selectedYear}`, JSON.stringify(updatedSections));
+      localStorage.setItem(`cchc_hoi_an_dong_changelog_${selectedYear}`, JSON.stringify(updatedLogs));
+    } catch (_) {}
+
+    // Phát đồng bộ sang Firebase Firestore, Google Drive và máy chủ chia sẻ
+    await syncWithDrive(
+      updatedSections,
+      updatedLogs,
+      `Cập nhật tiêu chí ${updatedCriterion.code}`,
+      updatedCriterion.code,
+      true
+    );
   };
 
   const handleOpenCriterion = (criterion: CCHCSubCriterion, section: CCHCSection) => {

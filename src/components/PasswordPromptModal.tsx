@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Lock, KeyRound, Eye, EyeOff, X, ShieldAlert, ArrowRight } from 'lucide-react';
+import { HoiAnDongLogo } from './HoiAnDongLogo.tsx';
 
 interface PasswordPromptModalProps {
   isOpen: boolean;
@@ -37,10 +38,8 @@ export const PasswordPromptModal: React.FC<PasswordPromptModalProps> = ({
         
         {/* Modal Header */}
         <div className="bg-gradient-to-r from-slate-900 to-sky-950 text-white p-5 flex items-center justify-between border-b-2 border-amber-400">
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-sky-500/20 text-sky-300 border border-sky-400/30">
-              <Lock className="w-5 h-5" />
-            </div>
+          <div className="flex items-center gap-3">
+            <HoiAnDongLogo className="w-10 h-10 drop-shadow-md shrink-0" />
             <div>
               <h3 className="font-bold text-sm sm:text-base">Cài Đặt Hệ Thống — Quản Trị Viên</h3>
               <p className="text-[11px] text-slate-400">Minh chứng Drive, Apps Script, GitHub Pages & Năm đánh giá</p>

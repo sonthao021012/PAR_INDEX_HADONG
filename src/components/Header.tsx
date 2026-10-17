@@ -1,6 +1,7 @@
 import React from 'react';
 import { ShieldCheck, Printer, HelpCircle, HardDrive, RefreshCw, Flame, Settings, Lock } from 'lucide-react';
 import { OverallEvaluation, GASConfig } from '../types/cchc.ts';
+import { HoiAnDongLogo } from './HoiAnDongLogo.tsx';
 
 interface HeaderProps {
   evaluation: OverallEvaluation;
@@ -37,13 +38,8 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Top bar with government administrative badge */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pb-3 border-b border-red-700/60">
           <div className="flex items-center space-x-3.5">
-            {/* National emblem simulation badge */}
-            <div className="w-12 h-12 rounded-full bg-amber-400 p-0.5 shadow-md flex items-center justify-center shrink-0 border-2 border-amber-300">
-              <div className="w-full h-full rounded-full bg-red-700 flex flex-col items-center justify-center text-amber-300">
-                <span className="text-xl font-bold leading-none">★</span>
-                <span className="text-[7px] font-black uppercase tracking-tighter">VIỆT NAM</span>
-              </div>
-            </div>
+            {/* Logo UBND Phường Hội An Đông */}
+            <HoiAnDongLogo className="w-12 h-12 sm:w-14 sm:h-14 shrink-0 drop-shadow-lg hover:scale-105 transition-transform duration-200" />
             
             <div>
               <div className="flex items-center gap-2">

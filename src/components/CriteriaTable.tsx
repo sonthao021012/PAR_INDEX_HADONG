@@ -269,27 +269,25 @@ export const CriteriaTable: React.FC<CriteriaTableProps> = ({
                       {isPenalty ? `-${criterion.maxScore}` : isBonus ? `+${criterion.maxScore}` : criterion.maxScore}đ
                     </td>
 
-                    {/* Self score with quick inline input */}
+                    {/* Self score with clear interactive trigger */}
                     <td className="py-3 px-3 text-center">
                       <div className="inline-flex items-center justify-center">
-                        <input
-                          type="number"
-                          step="0.25"
-                          min="0"
-                          max={criterion.maxScore}
-                          value={criterion.selfScore}
-                          onChange={(e) => {
-                            const val = parseFloat(e.target.value) || 0;
-                            onQuickUpdateScore(criterion.id, val);
-                          }}
-                          className={`w-18 px-2 py-1 text-center font-bold text-xs rounded border transition shadow-2xs ${
+                        <button
+                          type="button"
+                          onClick={() => onOpenCriterionModal(criterion, section)}
+                          title="Nhấp để chấm điểm, đính kèm minh chứng và lưu tiêu chí"
+                          className={`min-w-16 px-2.5 py-1 text-center font-bold text-xs rounded-lg border transition shadow-2xs hover:scale-105 active:scale-95 cursor-pointer flex items-center justify-center gap-1 ${
                             criterion.selfScore >= criterion.maxScore && !isPenalty
                               ? 'bg-emerald-50 text-emerald-800 border-emerald-300 font-black'
                               : isPenalty && criterion.selfScore > 0
-                              ? 'bg-rose-50 text-rose-800 border-rose-300'
-                              : 'bg-white text-slate-900 border-slate-300 focus:ring-1 focus:ring-red-500'
+                              ? 'bg-rose-50 text-rose-800 border-rose-300 font-bold'
+                              : criterion.selfScore > 0
+                              ? 'bg-amber-50 text-amber-800 border-amber-300 font-bold'
+                              : 'bg-white text-slate-700 border-slate-300 hover:border-red-400 hover:text-red-700'
                           }`}
-                        />
+                        >
+                          <span>{criterion.selfScore}đ</span>
+                        </button>
                       </div>
                     </td>
 

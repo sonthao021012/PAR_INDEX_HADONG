@@ -28,7 +28,7 @@ interface CriterionDetailModalProps {
   gasConfig: GASConfig;
   isOpen: boolean;
   onClose: () => void;
-  onSaveCriterion: (updatedCriterion: CCHCSubCriterion) => void;
+  onSaveCriterion: (updatedCriterion: CCHCSubCriterion) => Promise<void> | void;
   onPreviewEvidence: (evidence: EvidenceFile) => void;
 }
 
@@ -48,6 +48,7 @@ export const CriterionDetailModal: React.FC<CriterionDetailModalProps> = ({
   const [department, setDepartment] = useState<string>(criterion.department);
   const [notes, setNotes] = useState<string>(criterion.notes || '');
   const [evidenceList, setEvidenceList] = useState<EvidenceFile[]>(criterion.evidenceList || []);
+  const [isSaving, setIsSaving] = useState<boolean>(false);
 
   // Upload Form State
   const [isUploading, setIsUploading] = useState<boolean>(false);
@@ -235,17 +236,6 @@ export const CriterionDetailModal: React.FC<CriterionDetailModalProps> = ({
 
     const updated = evidenceList.filter((item: EvidenceFile) => item.id !== id);
     setEvidenceList(updated);
-
-    // Lưu ngay thay đổi tiêu chí
-    onSaveCriterion({
-      ...criterion,
-      selfScore: validateCriterionScore(selfScore, criterion.maxScore),
-      status,
-      department,
-      notes,
-      evidenceList: updated,
-    });
-
     setDeletingId(null);
 
     if (driveNotice) {
@@ -260,17 +250,24 @@ export const CriterionDetailModal: React.FC<CriterionDetailModalProps> = ({
     }
   };
 
-  const handleSave = () => {
-    const validated = validateCriterionScore(selfScore, criterion.maxScore);
-    onSaveCriterion({
-      ...criterion,
-      selfScore: validated,
-      status,
-      department,
-      notes,
-      evidenceList
-    });
-    onClose();
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      const validated = validateCriterionScore(selfScore, criterion.maxScore);
+      await onSaveCriterion({
+        ...criterion,
+        selfScore: validated,
+        status,
+        department,
+        notes,
+        evidenceList,
+      });
+      onClose();
+    } catch (err) {
+      console.error('Lỗi lưu tiêu chí:', err);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -654,23 +651,35 @@ export const CriterionDetailModal: React.FC<CriterionDetailModalProps> = ({
         </div>
 
         {/* Modal Footer */}
-        <div className="bg-slate-50 p-4 border-t border-slate-200 flex items-center justify-between">
-          <div className="text-xs text-slate-500">
-            * Dữ liệu được lưu trữ trực tiếp và sẵn sàng xuất báo cáo CCHC phường
+        <div className="bg-slate-50 p-4 border-t border-slate-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div className="text-xs text-slate-500 flex items-center gap-1.5">
+            <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span>Chỉ lưu và phát đồng bộ sang các máy khác khi bạn bấm nút <strong>"Lưu & Đồng bộ"</strong></span>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 self-end sm:self-auto">
             <button
               onClick={onClose}
-              className="px-4 py-2 rounded-lg bg-white border border-slate-300 text-slate-700 text-xs font-semibold hover:bg-slate-100 transition"
+              disabled={isSaving}
+              className="px-4 py-2 rounded-lg bg-white border border-slate-300 text-slate-700 text-xs font-semibold hover:bg-slate-100 transition cursor-pointer disabled:opacity-50"
             >
               Đóng
             </button>
             <button
               onClick={handleSave}
-              className="px-5 py-2 rounded-lg bg-red-700 hover:bg-red-800 text-white text-xs font-bold shadow transition flex items-center gap-1.5"
+              disabled={isSaving || isUploading}
+              className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-red-700 to-red-800 hover:from-red-800 hover:to-red-900 text-white text-xs font-bold shadow-md hover:shadow-lg transition flex items-center gap-2 cursor-pointer disabled:opacity-50"
             >
-              <Save className="w-4 h-4" />
-              <span>Lưu Cập Nhật</span>
+              {isSaving ? (
+                <>
+                  <RefreshCw className="w-4 h-4 animate-spin text-amber-300" />
+                  <span>Đang Lưu & Đồng Bộ...</span>
+                </>
+              ) : (
+                <>
+                  <Save className="w-4 h-4 text-amber-300" />
+                  <span>Lưu & Đồng Bộ Thiết Bị</span>
+                </>
+              )}
             </button>
           </div>
         </div>

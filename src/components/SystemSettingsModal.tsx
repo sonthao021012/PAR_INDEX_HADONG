@@ -43,6 +43,7 @@ import {
   type ScannedDriveFile,
 } from '../services/driveScanner.ts';
 import { firebaseConfig } from '../services/firebase.ts';
+import { HoiAnDongLogo } from './HoiAnDongLogo.tsx';
 
 export interface SystemSettingsModalProps {
   isOpen: boolean;
@@ -420,9 +421,7 @@ export const SystemSettingsModal: React.FC<SystemSettingsModalProps> = ({
         {/* Modal Top Header */}
         <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-950 text-white p-4 sm:p-5 flex items-center justify-between border-b-2 border-amber-500">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-amber-400/20 text-amber-300 border border-amber-400/40 flex items-center justify-center shadow-inner">
-              <Settings className="w-5 h-5" />
-            </div>
+            <HoiAnDongLogo className="w-11 h-11 shrink-0 drop-shadow-md" />
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-[10px] uppercase font-bold tracking-widest text-amber-300">

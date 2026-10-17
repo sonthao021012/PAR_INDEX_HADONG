@@ -47,6 +47,7 @@ export interface FirebaseSyncPayload {
   updatedBy?: string;
   criterionCode?: string;
   note?: string;
+  senderSessionId?: string;
 }
 
 const FIRESTORE_COLLECTION = 'cchc_sync';
@@ -70,6 +71,7 @@ export async function saveToFirebase(payload: FirebaseSyncPayload): Promise<bool
       updatedBy: payload.updatedBy || 'UBND Phường Hội An Đông',
       criterionCode: payload.criterionCode || 'TOÀN BỘ',
       note: payload.note || 'Đồng bộ thời gian thực qua Firebase',
+      senderSessionId: payload.senderSessionId || '',
     };
 
     await setDoc(docRef, dataToSave, { merge: true });

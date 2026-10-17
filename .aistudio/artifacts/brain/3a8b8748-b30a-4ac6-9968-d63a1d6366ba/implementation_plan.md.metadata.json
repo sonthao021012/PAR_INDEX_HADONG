@@ -1,0 +1,6 @@
+{
+  "summary": "Kế hoạch tối ưu hóa cơ chế lưu và đồng bộ dữ liệu: Chỉ thực hiện lưu và đồng bộ dữ liệu khi người dùng ấn nút \"Lưu\" trong cửa sổ chi tiết tiêu chí, loại bỏ cơ chế tự động đồng bộ liên tục (debounce 1.5s) gây tốn tài nguyên/token, đồng thời đảm bảo khi một máy bấm Lưu thì các máy khác ngay lập tức nhận dữ liệu mới theo thời gian thực.",
+  "updatedAt": "2026-10-17T07:19:23.540557198Z",
+  "requestFeedback": true,
+  "userFacing": true
+}

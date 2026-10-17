@@ -1,0 +1,138 @@
+<svg viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="hadGoldRim" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fdf0a6" />
+      <stop offset="25%" stop-color="#dcb35c" />
+      <stop offset="50%" stop-color="#b58228" />
+      <stop offset="75%" stop-color="#f7e492" />
+      <stop offset="100%" stop-color="#9a691c" />
+    </linearGradient>
+
+    <linearGradient id="hadGoldEmboss" x1="20%" y1="10%" x2="80%" y2="90%">
+      <stop offset="0%" stop-color="#fff2b0" />
+      <stop offset="20%" stop-color="#f3d077" />
+      <stop offset="45%" stop-color="#dca53d" />
+      <stop offset="70%" stop-color="#b47b20" />
+      <stop offset="90%" stop-color="#fce796" />
+      <stop offset="100%" stop-color="#8d5c14" />
+    </linearGradient>
+
+    <linearGradient id="hadGoldBevel" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#7a4d0f" />
+      <stop offset="30%" stop-color="#c5912d" />
+      <stop offset="60%" stop-color="#fae797" />
+      <stop offset="100%" stop-color="#9b6819" />
+    </linearGradient>
+
+    <radialGradient id="hadRedBg" cx="38%" cy="32%" r="68%">
+      <stop offset="0%" stop-color="#9c2327" />
+      <stop offset="45%" stop-color="#82191c" />
+      <stop offset="80%" stop-color="#671114" />
+      <stop offset="100%" stop-color="#48080a" />
+    </radialGradient>
+
+    <radialGradient id="hadGloss" cx="30%" cy="20%" r="50%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.32" />
+      <stop offset="50%" stop-color="#ffffff" stop-opacity="0.08" />
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0" />
+    </radialGradient>
+
+    <filter id="hadShadow" x="-15%" y="-15%" width="130%" height="130%">
+      <feDropShadow dx="2" dy="5" stdDeviation="4" flood-color="#1a0405" flood-opacity="0.5" />
+    </filter>
+
+    <filter id="hadInnerGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="1" dy="2" stdDeviation="2" flood-color="#360204" flood-opacity="0.8" />
+    </filter>
+
+    <path id="hadTextArc" d="M 165,376 A 176,176 0 0,0 335,376" fill="none" />
+  </defs>
+
+  <circle cx="250" cy="254" r="236" fill="#000000" opacity="0.25" filter="blur(4px)" />
+  <circle cx="250" cy="250" r="240" fill="url(#hadGoldRim)" stroke="#744c0f" stroke-width="1.5" />
+  <circle cx="250" cy="250" r="235" fill="none" stroke="#603708" stroke-width="1.2" opacity="0.65" />
+  <circle cx="250" cy="250" r="233" fill="none" stroke="#fef3b5" stroke-width="1" opacity="0.8" />
+  <circle cx="250" cy="250" r="231" fill="url(#hadRedBg)" />
+  <ellipse cx="230" cy="180" rx="200" ry="140" fill="url(#hadGloss)" />
+
+  <g filter="url(#hadShadow)">
+    <!-- Right Crescent Arc -->
+    <path
+      d="M 238,50 C 275,56 312,71 346,95 C 390,126 422,171 435,224 C 445,268 440,317 418,358 C 400,391 370,420 334,438 C 310,450 282,458 255,462 C 288,446 322,422 346,394 C 378,356 395,308 393,256 C 391,198 368,148 328,110 C 298,82 262,64 222,54 Z"
+      fill="url(#hadGoldEmboss)"
+      stroke="url(#hadGoldBevel)"
+      stroke-width="2"
+    />
+
+    <!-- Left Wings / Crane Motif -->
+    <path
+      d="M 240,102 C 215,92 188,100 166,118 C 142,138 126,168 116,198 C 106,230 105,264 116,295 C 119,270 128,245 142,224 C 158,200 182,182 210,172 C 222,168 232,168 238,172 C 225,152 212,130 205,106 Z"
+      fill="url(#hadGoldEmboss)"
+      stroke="url(#hadGoldBevel)"
+      stroke-width="1.5"
+    />
+    <path
+      d="M 142,224 C 125,250 115,282 118,314 C 120,336 130,358 146,374 C 142,352 146,328 158,308 C 172,286 195,270 220,260 C 192,252 165,240 142,224 Z"
+      fill="url(#hadGoldEmboss)"
+      stroke="url(#hadGoldBevel)"
+      stroke-width="1.5"
+    />
+    <path
+      d="M 146,374 C 162,392 184,410 208,424 C 224,432 242,440 260,444 C 236,432 214,414 196,394 C 182,378 172,360 166,340 C 156,352 150,364 146,374 Z"
+      fill="url(#hadGoldEmboss)"
+      stroke="url(#hadGoldBevel)"
+      stroke-width="1.5"
+    />
+
+    <!-- Center Pagoda Roof / Letter A -->
+    <path
+      d="M 188,312 L 264,198 C 268,192 274,194 278,200 L 366,310 C 340,305 312,306 286,314 L 268,268 L 248,315 C 228,312 208,311 188,312 Z"
+      fill="url(#hadGoldEmboss)"
+      stroke="url(#hadGoldBevel)"
+      stroke-width="2"
+    />
+
+    <path
+      d="M 268,268 L 255,298 C 264,296 272,296 280,298 Z"
+      fill="url(#hadRedBg)"
+      stroke="#5c0e11"
+      stroke-width="1.2"
+    />
+
+    <!-- Bottom Curved Banner -->
+    <path
+      d="M 160,358 C 188,348 218,344 250,344 C 282,344 312,348 340,358 C 334,374 324,394 308,408 C 290,418 270,422 250,422 C 230,422 210,418 192,408 C 176,394 166,374 160,358 Z"
+      fill="url(#hadGoldEmboss)"
+      stroke="url(#hadGoldBevel)"
+      stroke-width="2"
+    />
+  </g>
+
+  <!-- Red Engraved Text HỘI AN ĐÔNG -->
+  <text
+    font-size="24"
+    font-weight="900"
+    font-family="system-ui, -apple-system, sans-serif"
+    letter-spacing="2.8"
+    fill="#fceaa8"
+    opacity="0.8"
+    transform="translate(0, 1.2)"
+  >
+    <textPath href="#hadTextArc" startOffset="50%" text-anchor="middle">
+      HỘI AN ĐÔNG
+    </textPath>
+  </text>
+  <text
+    font-size="24"
+    font-weight="900"
+    font-family="system-ui, -apple-system, sans-serif"
+    letter-spacing="2.8"
+    fill="#630f12"
+    stroke="#420608"
+    stroke-width="0.8"
+  >
+    <textPath href="#hadTextArc" startOffset="50%" text-anchor="middle">
+      HỘI AN ĐÔNG
+    </textPath>
+  </text>
+</svg>

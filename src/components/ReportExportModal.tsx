@@ -2,6 +2,7 @@ import React, { useRef } from 'react';
 import { X, Printer, Download, Copy, Check, FileSpreadsheet, Building2, HardDrive } from 'lucide-react';
 import { CCHCSection, OverallEvaluation } from '../types/cchc.ts';
 import { calculateSectionScore } from '../utils/cchcRules.ts';
+import { HoiAnDongLogo } from './HoiAnDongLogo.tsx';
 
 interface ReportExportModalProps {
   isOpen: boolean;
@@ -115,11 +116,14 @@ export const ReportExportModal: React.FC<ReportExportModalProps> = ({
           
           {/* Government Formal Header */}
           <div className="flex flex-col sm:flex-row justify-between items-start gap-4 border-b pb-4 border-slate-300">
-            <div className="text-center sm:text-left">
-              <p className="text-xs uppercase font-semibold text-slate-700">ỦY BAN NHÂN DÂN PHƯỜNG HỘI AN ĐÔNG</p>
-              <p className="text-xs uppercase font-bold text-slate-900">BAN CHỈ ĐẠO CẢI CÁCH HÀNH CHÍNH</p>
-              <div className="w-24 h-0.5 bg-slate-400 mx-auto sm:mx-0 mt-1"></div>
-              <p className="text-[11px] text-slate-500 mt-1 italic">Số: ...... /BC-UBND</p>
+            <div className="flex items-center gap-3">
+              <HoiAnDongLogo className="w-14 h-14 shrink-0 drop-shadow-xs" />
+              <div className="text-left">
+                <p className="text-xs uppercase font-semibold text-slate-700">ỦY BAN NHÂN DÂN PHƯỜNG HỘI AN ĐÔNG</p>
+                <p className="text-xs uppercase font-bold text-slate-900">BAN CHỈ ĐẠO CẢI CÁCH HÀNH CHÍNH</p>
+                <div className="w-24 h-0.5 bg-slate-400 mt-1"></div>
+                <p className="text-[11px] text-slate-500 mt-1 italic">Số: ...... /BC-UBND</p>
+              </div>
             </div>
 
             <div className="text-center sm:text-right">
