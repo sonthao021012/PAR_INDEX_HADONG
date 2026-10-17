@@ -1,6 +1,6 @@
 {
-  "summary": "Kế hoạch tối ưu hóa cơ chế lưu và đồng bộ dữ liệu: Chỉ thực hiện lưu và đồng bộ dữ liệu khi người dùng ấn nút \"Lưu\" trong cửa sổ chi tiết tiêu chí, loại bỏ cơ chế tự động đồng bộ liên tục (debounce 1.5s) gây tốn tài nguyên/token, đồng thời đảm bảo khi một máy bấm Lưu thì các máy khác ngay lập tức nhận dữ liệu mới theo thời gian thực.",
-  "updatedAt": "2026-10-17T07:19:23.540557198Z",
+  "summary": "Kế hoạch triển khai: (1) Đổi nút 'Lưu & Đồng bộ Thiết Bị' thành nút 'Lưu' chuyên trách lưu Firebase và đồng bộ thời gian thực sang các máy khác, dừng tạo file JSON trong thư mục LOG trên Drive, đảm bảo hoàn thành tải file minh chứng trước khi lưu; (2) Xây dựng tính năng Sao lưu (Backup) tự động tạo file vào thư mục Backup trên Google Drive theo ngày giờ và tính năng Khôi phục (Restore) từ Drive hoặc từ file JSON; (3) Loại bỏ tính năng 'Dán & Nhận Diện Hàng loạt Link Drive' và 'Quét thư mục Google drive' trong Cài Đặt Hệ Thống.",
+  "updatedAt": "2026-10-17T09:13:05.153193111Z",
   "requestFeedback": true,
   "userFacing": true
 }

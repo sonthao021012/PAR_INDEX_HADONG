@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   X,
   Settings,
@@ -33,22 +33,13 @@ import {
 import type { CCHCSection, ChangeLogEntry, OverallEvaluation, GASConfig, EvidenceFile } from '../types/cchc.ts';
 import { generateGoogleAppsScriptCode } from '../utils/cchcRules.ts';
 import { sendGasRequest } from '../services/gasClient.ts';
-import {
-  scanAndAutoMapDriveFiles,
-  parseDriveLinksAndFiles,
-  batchAttachEvidenceItems,
-  extractCriterionCodeFromText,
-  type DriveScanResult,
-  type ParsedDriveImportItem,
-  type ScannedDriveFile,
-} from '../services/driveScanner.ts';
 import { firebaseConfig } from '../services/firebase.ts';
 import { HoiAnDongLogo } from './HoiAnDongLogo.tsx';
 
 export interface SystemSettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
-  initialTab?: 'years' | 'evidence' | 'gas' | 'github' | 'firebase';
+  initialTab?: 'years' | 'evidence' | 'gas' | 'backup' | 'github' | 'firebase';
   availableYears: number[];
   selectedYear: number;
   onSelectYear: (year: number) => void;
@@ -92,7 +83,9 @@ export const SystemSettingsModal: React.FC<SystemSettingsModalProps> = ({
   driveFileId = '',
   firebaseConnected = true,
 }) => {
-  const [activeTab, setActiveTab] = useState<'years' | 'evidence' | 'gas' | 'github' | 'firebase'>(initialTab);
+  const [activeTab, setActiveTab] = useState<'years' | 'evidence' | 'gas' | 'backup' | 'github' | 'firebase'>(
+    initialTab === 'github' ? 'backup' : (initialTab || 'years')
+  );
 
   // --- TAB 1: Year Management State ---
   const [newYearInput, setNewYearInput] = useState<number>(() => {
@@ -104,12 +97,7 @@ export const SystemSettingsModal: React.FC<SystemSettingsModalProps> = ({
   const [yearErrorMsg, setYearErrorMsg] = useState<string>('');
 
   // --- TAB 2: Drive Evidence State ---
-  const [evidenceSubTab, setEvidenceSubTab] = useState<'scan' | 'batch' | 'upload' | 'list'>('batch');
-  const [batchInputText, setBatchInputText] = useState<string>('');
-  const [parsedItems, setParsedItems] = useState<ParsedDriveImportItem[]>([]);
-  const [batchSuccessMsg, setBatchSuccessMsg] = useState<string>('');
-  const [isScanning, setIsScanning] = useState<boolean>(false);
-  const [scanResult, setScanResult] = useState<DriveScanResult | null>(null);
+  const [evidenceSubTab, setEvidenceSubTab] = useState<'upload' | 'list'>('list');
   const [searchFilter, setSearchFilter] = useState<string>('');
   const [sectionFilter, setSectionFilter] = useState<string>('ALL');
 
@@ -132,8 +120,44 @@ export const SystemSettingsModal: React.FC<SystemSettingsModalProps> = ({
   const [testResult, setTestResult] = useState<{ success: boolean; message: string; details?: any } | null>(null);
   const [copiedCode, setCopiedCode] = useState<boolean>(false);
 
-  // --- TAB 4: GitHub Pages & Backup State ---
-  const [copiedAction, setCopiedAction] = useState<string | null>(null);
+  // --- TAB 4: Backup & Restore State ---
+  const [isBackingUp, setIsBackingUp] = useState<boolean>(false);
+  const [backupMsg, setBackupMsg] = useState<{ type: 'success' | 'error'; text: string; url?: string } | null>(null);
+  const [driveBackups, setDriveBackups] = useState<Array<{
+    id: string;
+    name: string;
+    size: string;
+    date: string;
+    viewUrl?: string;
+  }>>([]);
+  const [isLoadingDriveBackups, setIsLoadingDriveBackups] = useState<boolean>(false);
+  const [restoringId, setRestoringId] = useState<string | null>(null);
+  const [confirmRestoreItem, setConfirmRestoreItem] = useState<{
+    id: string;
+    name: string;
+    date?: string;
+    source: 'drive' | 'history' | 'local';
+    sections?: CCHCSection[];
+    changeLog?: ChangeLogEntry[];
+  } | null>(null);
+
+  const [backupHistory, setBackupHistory] = useState<Array<{
+    id: string;
+    fileName: string;
+    createdAt: string;
+    fileUrl?: string;
+    totalCriteria: number;
+    finalScore: number;
+    totalEvidence: number;
+    data: any;
+  }>>(() => {
+    try {
+      const saved = localStorage.getItem(`cchc_backup_history_${selectedYear}`);
+      return saved ? JSON.parse(saved) : [];
+    } catch (_) {
+      return [];
+    }
+  });
   const [restoreSuccess, setRestoreSuccess] = useState<string | null>(null);
   const [restoreError, setRestoreError] = useState<string | null>(null);
 
@@ -184,57 +208,188 @@ export const SystemSettingsModal: React.FC<SystemSettingsModalProps> = ({
     setTimeout(() => setYearSuccessMsg(''), 4000);
   };
 
-  // Handler: Scan Drive
-  const handleScanDrive = async () => {
+  // --- HANDLER: Fetch Drive Backups ---
+  const fetchDriveBackups = async () => {
+    if (!gasConfig.webAppUrl) return;
+    setIsLoadingDriveBackups(true);
+    try {
+      const res = await sendGasRequest(gasConfig.webAppUrl, { action: 'getBackupFiles' }, 15000);
+      if (res && res.success && res.data && Array.isArray(res.data.files)) {
+        setDriveBackups(res.data.files);
+      }
+    } catch (e) {
+      console.warn('Lỗi tải danh sách backup từ Drive:', e);
+    } finally {
+      setIsLoadingDriveBackups(false);
+    }
+  };
+
+  useEffect(() => {
+    if ((activeTab === 'backup' || activeTab === 'github') && gasConfig.webAppUrl) {
+      fetchDriveBackups();
+    }
+  }, [activeTab, gasConfig.webAppUrl]);
+
+  // --- HANDLER: Backup to Google Drive (Folder Backup) ---
+  const handleCreateDriveBackup = async () => {
     if (!gasConfig.webAppUrl) {
-      alert('Vui lòng cấu hình Web App URL trong tab "Google Apps Script" trước khi quét!');
+      setBackupMsg({
+        type: 'error',
+        text: 'Vui lòng cấu hình Web App URL trong tab "Apps Script & Drive" trước khi sao lưu lên Google Drive!',
+      });
       return;
     }
 
-    setIsScanning(true);
-    setScanResult(null);
+    setIsBackingUp(true);
+    setBackupMsg(null);
+
+    const now = new Date();
+    const pad = (n: number) => String(n).padStart(2, '0');
+    const timestampStr = `${pad(now.getDate())}${pad(now.getMonth() + 1)}${now.getFullYear()}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+    const fileName = `Backup_CCHC_${selectedYear}_${timestampStr}.json`;
+
+    const backupData = {
+      app: 'CCHC_PAR_INDEX_HOI_AN_DONG',
+      version: '2026.1',
+      year: selectedYear,
+      exportedAt: now.toISOString(),
+      timestamp: Date.now(),
+      fileName: fileName,
+      organization: 'Ủy ban nhân dân Phường Hội An Đông - TP. Đà Nẵng',
+      evaluation,
+      sections,
+      changeLog,
+    };
 
     try {
-      const result = await scanAndAutoMapDriveFiles(gasConfig.webAppUrl, sections);
-      setScanResult(result);
+      const jsonString = JSON.stringify(backupData, null, 2);
+      const base64Data = 'data:application/json;base64,' + btoa(unescape(encodeURIComponent(jsonString)));
+
+      const res = await sendGasRequest(gasConfig.webAppUrl, {
+        action: 'uploadFile',
+        fileName: fileName,
+        base64Data: base64Data,
+        mimeType: 'application/json',
+        sectionName: 'Backup',
+        criterionCode: 'BAK',
+        note: `Bản sao lưu CCHC năm ${selectedYear} (${now.toLocaleString('vi-VN')})`,
+      }, 30000);
+
+      const fileUrl = res?.data?.viewUrl || res?.data?.fileUrl;
+
+      const newEntry = {
+        id: res?.data?.fileId || 'bak-' + Date.now(),
+        fileName,
+        createdAt: now.toLocaleString('vi-VN'),
+        fileUrl,
+        totalCriteria: evaluation.totalCriteriaCount,
+        finalScore: evaluation.finalScore,
+        totalEvidence: evaluation.totalEvidenceCount,
+        data: backupData,
+      };
+
+      const updatedHistory = [newEntry, ...backupHistory.slice(0, 19)];
+      setBackupHistory(updatedHistory);
+      try {
+        localStorage.setItem(`cchc_backup_history_${selectedYear}`, JSON.stringify(updatedHistory));
+      } catch (_) {}
+
+      setBackupMsg({
+        type: 'success',
+        text: `Đã tạo tệp sao lưu "${fileName}" trong thư mục Backup trên Google Drive thành công!`,
+        url: fileUrl,
+      });
+
+      // Refresh drive backups list immediately
+      fetchDriveBackups();
     } catch (err: any) {
-      setScanResult({
-        success: false,
-        message: 'Lỗi khi quét Google Drive: ' + (err?.message || 'Lỗi mạng'),
-        totalFound: 0,
-        newlyMappedCount: 0,
-        files: [],
-        unmappedFiles: [],
-        updatedSections: sections,
+      setBackupMsg({
+        type: 'error',
+        text: `Lỗi khi lưu tệp backup lên Google Drive: ${err?.message || 'Không thể kết nối Apps Script'}`,
       });
     } finally {
-      setIsScanning(false);
+      setIsBackingUp(false);
     }
   };
 
-  // Handler: Apply Scanned Files
-  const handleApplyScannedFiles = () => {
-    if (!scanResult || !scanResult.updatedSections) return;
-    onUpdateSections(scanResult.updatedSections, `Đã gắn tự động ${scanResult.newlyMappedCount} minh chứng từ Google Drive vào các tiêu chí`);
-    alert(`Đã gán thành công ${scanResult.newlyMappedCount} tệp minh chứng vào các tiêu chí tương ứng và đồng bộ lên hệ thống!`);
+  // --- HANDLER: Initiate restore from Drive ---
+  const handleInitiateRestoreFromDrive = async (fileItem: { id: string; name: string; date?: string; viewUrl?: string }) => {
+    setRestoreSuccess(null);
+    setRestoreError(null);
+    setRestoringId(fileItem.id);
+
+    try {
+      // 1. Check local backupHistory first
+      const localMatch = backupHistory.find(b => b.id === fileItem.id || b.fileName === fileItem.name);
+      if (localMatch && localMatch.data && Array.isArray(localMatch.data.sections)) {
+        setConfirmRestoreItem({
+          id: fileItem.id,
+          name: fileItem.name,
+          date: fileItem.date || localMatch.createdAt,
+          source: 'drive',
+          sections: localMatch.data.sections,
+          changeLog: localMatch.data.changeLog || [],
+        });
+        return;
+      }
+
+      // 2. Otherwise read from Google Drive
+      if (!gasConfig.webAppUrl) {
+        throw new Error('Chưa cấu hình URL Google Apps Script để tải tệp');
+      }
+
+      const res = await sendGasRequest(gasConfig.webAppUrl, {
+        action: 'readBackupFile',
+        fileId: fileItem.id,
+      }, 20000);
+
+      if (res && res.success && res.data && res.data.content) {
+        const parsed = JSON.parse(res.data.content);
+        if (parsed.sections && Array.isArray(parsed.sections)) {
+          setConfirmRestoreItem({
+            id: fileItem.id,
+            name: fileItem.name,
+            date: fileItem.date || 'Google Drive',
+            source: 'drive',
+            sections: parsed.sections,
+            changeLog: parsed.changeLog || [],
+          });
+        } else {
+          throw new Error('Tệp sao lưu trên Drive không đúng cấu trúc bộ chỉ số CCHC!');
+        }
+      } else {
+        throw new Error(res?.error || 'Không thể đọc nội dung tệp sao lưu từ Google Drive');
+      }
+    } catch (err: any) {
+      setRestoreError(err?.message || 'Lỗi khi đọc bản sao lưu từ Drive');
+    } finally {
+      setRestoringId(null);
+    }
   };
 
-  // Handler: Parse batch links
-  const handleParseBatch = () => {
-    if (!batchInputText.trim()) return;
-    const items = parseDriveLinksAndFiles(batchInputText);
-    setParsedItems(items);
+  // --- HANDLER: Initiate restore from history ---
+  const handleInitiateRestoreFromHistory = (entry: typeof backupHistory[0]) => {
+    if (!entry.data || !Array.isArray(entry.data.sections)) {
+      setRestoreError('Bản sao lưu không chứa cấu trúc dữ liệu hợp lệ!');
+      return;
+    }
+    setConfirmRestoreItem({
+      id: entry.id,
+      name: entry.fileName,
+      date: entry.createdAt,
+      source: 'history',
+      sections: entry.data.sections,
+      changeLog: entry.data.changeLog || [],
+    });
   };
 
-  // Handler: Apply batch items
-  const handleApplyBatch = () => {
-    if (parsedItems.length === 0) return;
-    const res = batchAttachEvidenceItems(parsedItems, sections);
-    onUpdateSections(res.updatedSections, `Đã nhập và gán ${res.attachedCount} link/tệp Drive vào tiêu chí`);
-    setBatchSuccessMsg(`Đã gán thành công ${res.attachedCount} tệp minh chứng vào các tiêu chí CCHC!`);
-    setBatchInputText('');
-    setParsedItems([]);
-    setTimeout(() => setBatchSuccessMsg(''), 5000);
+  // --- HANDLER: Execute confirmed restore ---
+  const handleExecuteRestore = () => {
+    if (!confirmRestoreItem || !confirmRestoreItem.sections) return;
+    onRestoreData(confirmRestoreItem.sections, confirmRestoreItem.changeLog || []);
+    setRestoreSuccess(`✅ Đã khôi phục thành công dữ liệu từ "${confirmRestoreItem.name}" và đồng bộ tức thì sang Firebase!`);
+    setConfirmRestoreItem(null);
+    setTimeout(() => setRestoreSuccess(null), 6000);
   };
 
   // Handler: Direct file upload
@@ -368,12 +523,20 @@ export const SystemSettingsModal: React.FC<SystemSettingsModalProps> = ({
     setTimeout(() => setCopiedCode(false), 2500);
   };
 
-  // Backup export
+  // Backup export to local JSON file
   const handleExportBackup = () => {
+    const now = new Date();
+    const pad = (n: number) => String(n).padStart(2, '0');
+    const timestampStr = `${pad(now.getDate())}${pad(now.getMonth() + 1)}${now.getFullYear()}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+    const fileName = `Backup_CCHC_${selectedYear}_${timestampStr}.json`;
+
     const backupData = {
       app: 'CCHC_PAR_INDEX_HOI_AN_DONG',
+      version: '2026.1',
       year: selectedYear,
-      exportedAt: new Date().toISOString(),
+      exportedAt: now.toISOString(),
+      timestamp: Date.now(),
+      fileName: fileName,
       organization: 'Ủy ban nhân dân Phường Hội An Đông - TP. Đà Nẵng',
       evaluation,
       sections,
@@ -382,13 +545,13 @@ export const SystemSettingsModal: React.FC<SystemSettingsModalProps> = ({
     const jsonString = `data:text/json;charset=utf-8,${encodeURIComponent(JSON.stringify(backupData, null, 2))}`;
     const downloadAnchor = document.createElement('a');
     downloadAnchor.setAttribute('href', jsonString);
-    downloadAnchor.setAttribute('download', `Sao_Luu_CCHC_${selectedYear}_UBND_Hoi_An_Dong_${new Date().toISOString().split('T')[0]}.json`);
+    downloadAnchor.setAttribute('download', fileName);
     document.body.appendChild(downloadAnchor);
     downloadAnchor.click();
     downloadAnchor.remove();
   };
 
-  // Backup import
+  // Backup import from local JSON file
   const handleImportBackup = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -402,16 +565,24 @@ export const SystemSettingsModal: React.FC<SystemSettingsModalProps> = ({
         const content = event.target?.result as string;
         const parsed = JSON.parse(content);
         if (parsed.sections && Array.isArray(parsed.sections)) {
-          onRestoreData(parsed.sections, parsed.changeLog || []);
-          setRestoreSuccess(`Khôi phục thành công dữ liệu với ${parsed.sections.length} lĩnh vực!`);
+          const importedLogs = Array.isArray(parsed.changeLog) ? parsed.changeLog : [];
+          setConfirmRestoreItem({
+            id: 'local-' + Date.now(),
+            name: file.name,
+            date: 'Tệp từ máy tính (' + (file.size / 1024).toFixed(1) + ' KB)',
+            source: 'local',
+            sections: parsed.sections,
+            changeLog: importedLogs,
+          });
         } else {
-          setRestoreError('Tệp không đúng định dạng sao lưu CCHC');
+          setRestoreError('Tệp không đúng định dạng sao lưu chuẩn CCHC!');
         }
       } catch (err) {
-        setRestoreError('Không thể đọc tệp sao lưu JSON');
+        setRestoreError('Không thể đọc tệp sao lưu JSON!');
       }
     };
     reader.readAsText(file);
+    e.target.value = '';
   };
 
   return (
@@ -494,15 +665,23 @@ export const SystemSettingsModal: React.FC<SystemSettingsModalProps> = ({
           </button>
 
           <button
-            onClick={() => setActiveTab('github')}
+            onClick={() => {
+              setActiveTab('backup');
+              fetchDriveBackups();
+            }}
             className={`px-3.5 py-2.5 text-xs font-bold rounded-t-lg transition flex items-center gap-2 border-t-2 cursor-pointer ${
-              activeTab === 'github'
-                ? 'bg-white text-slate-900 border-slate-800 shadow-xs'
+              activeTab === 'backup' || activeTab === 'github'
+                ? 'bg-white text-indigo-700 border-indigo-600 shadow-xs'
                 : 'border-transparent text-slate-600 hover:text-slate-900 hover:bg-white/60'
             }`}
           >
-            <Github className="w-4 h-4 text-slate-800" />
-            <span>GitHub Pages & Sao Lưu</span>
+            <Database className="w-4 h-4 text-indigo-600" />
+            <span>Sao Lưu &amp; Khôi Phục</span>
+            {(driveBackups.length > 0 || backupHistory.length > 0) && (
+              <span className="text-[10px] px-1.5 py-0.2 rounded bg-indigo-100 text-indigo-800 font-mono">
+                {driveBackups.length > 0 ? driveBackups.length : backupHistory.length}
+              </span>
+            )}
           </button>
 
           <button
@@ -752,47 +931,11 @@ export const SystemSettingsModal: React.FC<SystemSettingsModalProps> = ({
           {activeTab === 'evidence' && (
             <div className="space-y-4 animate-in fade-in duration-200">
               
-              {/* Evidence Subtabs */}
+              {/* Evidence Subtabs (Chỉ giữ Danh Sách và Tải File Trực Tiếp) */}
               <div className="flex items-center gap-2 border-b border-slate-200 pb-2">
                 <button
-                  onClick={() => setEvidenceSubTab('batch')}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
-                    evidenceSubTab === 'batch'
-                      ? 'bg-sky-600 text-white shadow-xs'
-                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                  }`}
-                >
-                  <Link2 className="w-3.5 h-3.5" />
-                  <span>Dán & Nhận Diện Hàng Loạt Link Drive</span>
-                </button>
-
-                <button
-                  onClick={() => setEvidenceSubTab('scan')}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
-                    evidenceSubTab === 'scan'
-                      ? 'bg-sky-600 text-white shadow-xs'
-                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                  }`}
-                >
-                  <RefreshCw className="w-3.5 h-3.5" />
-                  <span>Quét Thư Mục Google Drive</span>
-                </button>
-
-                <button
-                  onClick={() => setEvidenceSubTab('upload')}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
-                    evidenceSubTab === 'upload'
-                      ? 'bg-sky-600 text-white shadow-xs'
-                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                  }`}
-                >
-                  <Upload className="w-3.5 h-3.5" />
-                  <span>Tải File Trực Tiếp Lên Drive</span>
-                </button>
-
-                <button
                   onClick={() => setEvidenceSubTab('list')}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+                  className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
                     evidenceSubTab === 'list'
                       ? 'bg-sky-600 text-white shadow-xs'
                       : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
@@ -801,159 +944,19 @@ export const SystemSettingsModal: React.FC<SystemSettingsModalProps> = ({
                   <HardDrive className="w-3.5 h-3.5" />
                   <span>Danh Sách Minh Chứng ({allAttachedEvidence.length})</span>
                 </button>
+
+                <button
+                  onClick={() => setEvidenceSubTab('upload')}
+                  className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+                    evidenceSubTab === 'upload'
+                      ? 'bg-sky-600 text-white shadow-xs'
+                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                  }`}
+                >
+                  <Upload className="w-3.5 h-3.5" />
+                  <span>Tải File Trực Tiếp Lên Drive</span>
+                </button>
               </div>
-
-              {/* Subtab 1: Batch paste */}
-              {evidenceSubTab === 'batch' && (
-                <div className="space-y-4">
-                  <div className="p-3 rounded-xl bg-sky-50 border border-sky-200 text-xs text-sky-800 leading-relaxed">
-                    💡 <strong>Tính năng nhận diện thông minh:</strong> Bạn chỉ cần sao chép và dán danh sách link Google Drive, tên tệp (ví dụ <code>I.2.b.1_Ke_hoach_CCHC_2026.pdf</code>) hoặc danh sách văn bản vào khung bên dưới. Hệ thống sẽ tự động quét mã tiêu chí và gán vào đúng mục!
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold uppercase text-slate-700 mb-1">
-                      Nội dung dán danh sách tệp hoặc đường dẫn Drive:
-                    </label>
-                    <textarea
-                      value={batchInputText}
-                      onChange={(e) => setBatchInputText(e.target.value)}
-                      rows={5}
-                      className="w-full p-3 bg-slate-50 border border-slate-300 rounded-xl text-xs font-mono text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-sky-500"
-                      placeholder={`Ví dụ dán các dòng:\nhttps://drive.google.com/file/d/1ab.../view?usp=sharing - I.1.a Kế hoạch CCHC\nI.2.b.1_Bao_cao_cai_cach.pdf https://drive.google.com/open?id=1cd...`}
-                    />
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={handleParseBatch}
-                      disabled={!batchInputText.trim()}
-                      className="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-lg text-xs font-bold transition flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
-                    >
-                      <Search className="w-3.5 h-3.5" />
-                      <span>Nhận diện các mục</span>
-                    </button>
-
-                    {parsedItems.length > 0 && (
-                      <button
-                        onClick={handleApplyBatch}
-                        className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-sm"
-                      >
-                        <CheckCircle2 className="w-3.5 h-3.5" />
-                        <span>Gán {parsedItems.length} minh chứng này vào hệ thống</span>
-                      </button>
-                    )}
-                  </div>
-
-                  {batchSuccessMsg && (
-                    <div className="p-3 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center gap-2 font-medium">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                      <span>{batchSuccessMsg}</span>
-                    </div>
-                  )}
-
-                  {parsedItems.length > 0 && (
-                    <div className="border border-slate-200 rounded-xl overflow-hidden bg-white">
-                      <div className="bg-slate-100 p-2.5 font-bold text-xs text-slate-700 border-b border-slate-200 flex items-center justify-between">
-                        <span>Kết quả nhận diện ({parsedItems.length} mục)</span>
-                      </div>
-                      <div className="max-h-60 overflow-y-auto divide-y divide-slate-100 text-xs">
-                        {parsedItems.map((item, idx) => (
-                          <div key={idx} className="p-2.5 flex items-center justify-between gap-2">
-                            <div className="min-w-0">
-                              <span className="font-bold text-sky-700 font-mono px-1.5 py-0.5 rounded bg-sky-50 mr-2">
-                                {item.criterionCode || 'Chưa rõ mã'}
-                              </span>
-                              <span className="font-medium text-slate-800 truncate">{item.name}</span>
-                            </div>
-                            <span className="text-[10px] text-slate-400 font-mono shrink-0">
-                              ID: {item.driveFileId ? `${item.driveFileId.slice(0, 8)}...` : 'Tên tệp'}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Subtab 2: Drive Auto-scan */}
-              {evidenceSubTab === 'scan' && (
-                <div className="space-y-4">
-                  <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                    <div>
-                      <h4 className="font-bold text-xs sm:text-sm text-slate-800">
-                        Quét Thư Mục Google Drive Của UBND Phường Hội An Đông
-                      </h4>
-                      <p className="text-xs text-slate-500 mt-0.5">
-                        Thư mục: <code>{gasConfig.driveFolderName || 'CCHC_2026_UBND_Phuong_Hoi_An_Dong'}</code>
-                      </p>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={handleScanDrive}
-                        disabled={isScanning}
-                        className="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-xs font-bold transition flex items-center gap-2 shadow-sm disabled:opacity-50 cursor-pointer"
-                      >
-                        <RefreshCw className={`w-3.5 h-3.5 ${isScanning ? 'animate-spin' : ''}`} />
-                        <span>{isScanning ? 'Đang quét...' : 'Quét & Nhận diện ngay'}</span>
-                      </button>
-                    </div>
-                  </div>
-
-                  {scanResult && (
-                    <div className="space-y-3">
-                      <div className={`p-3 rounded-xl border text-xs font-medium flex items-center justify-between ${
-                        scanResult.success ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-amber-50 border-amber-200 text-amber-800'
-                      }`}>
-                        <span>{scanResult.message}</span>
-                        {scanResult.files && scanResult.files.filter((f) => f.mappedCriterionCode).length > 0 && (
-                          <button
-                            onClick={handleApplyScannedFiles}
-                            className="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded shadow-xs cursor-pointer"
-                          >
-                            Áp dụng {scanResult.files.filter((f) => f.mappedCriterionCode).length} tệp vào tiêu chí
-                          </button>
-                        )}
-                      </div>
-
-                      {scanResult.files && scanResult.files.filter((f) => f.mappedCriterionCode).length > 0 && (
-                        <div className="border border-slate-200 rounded-xl overflow-hidden max-h-60 overflow-y-auto">
-                          <table className="w-full text-left text-xs">
-                            <thead className="bg-slate-100 text-slate-700 text-[11px] uppercase">
-                              <tr>
-                                <th className="p-2.5">Tiêu chí</th>
-                                <th className="p-2.5">Tên tệp tìm thấy trên Drive</th>
-                                <th className="p-2.5">Xem</th>
-                              </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-100">
-                              {scanResult.files
-                                .filter((f) => f.mappedCriterionCode)
-                                .map((file, i) => (
-                                  <tr key={i} className="hover:bg-slate-50">
-                                    <td className="p-2.5 font-bold font-mono text-sky-700">{file.mappedCriterionCode}</td>
-                                    <td className="p-2.5 text-slate-800">{file.name}</td>
-                                    <td className="p-2.5">
-                                      <a
-                                        href={file.viewUrl || file.url}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                        className="text-sky-600 hover:underline flex items-center gap-1 font-semibold"
-                                      >
-                                        <ExternalLink className="w-3 h-3" /> Mở
-                                      </a>
-                                    </td>
-                                  </tr>
-                                ))}
-                            </tbody>
-                          </table>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              )}
 
               {/* Subtab 3: Direct Upload */}
               {evidenceSubTab === 'upload' && (
@@ -1262,20 +1265,322 @@ export const SystemSettingsModal: React.FC<SystemSettingsModalProps> = ({
           )}
 
           {/* ========================================================================= */}
-          {/* TAB 4: GITHUB PAGES & SAO LƯU (DEPLOY & BACKUP)                           */}
+          {/* TAB 4: SAO LƯU & KHÔI PHỤC (BACKUP & RESTORE)                             */}
           {/* ========================================================================= */}
-          {activeTab === 'github' && (
-            <div className="space-y-5 animate-in fade-in duration-200">
+          {(activeTab === 'backup' || activeTab === 'github') && (
+            <div className="space-y-6 animate-in fade-in duration-200">
               
-              <div className="p-4 rounded-xl bg-slate-900 text-white flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <div className="p-2.5 rounded-xl bg-white/10 text-white border border-white/20">
-                    <Github className="w-6 h-6" />
+              {/* Modal Confirmation for Restore */}
+              {confirmRestoreItem && (
+                <div className="p-4 rounded-xl bg-amber-50 border-2 border-amber-400 shadow-md space-y-3 animate-in fade-in zoom-in-95">
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 rounded-lg bg-amber-500 text-white shrink-0 mt-0.5">
+                      <AlertTriangle className="w-5 h-5" />
+                    </div>
+                    <div className="space-y-1">
+                      <h4 className="text-sm font-bold text-amber-950">
+                        Xác Nhận Khôi Phục Dữ Liệu Bộ Chỉ Số Năm {selectedYear}
+                      </h4>
+                      <p className="text-xs text-amber-900 leading-relaxed">
+                        Bạn sắp khôi phục dữ liệu từ bản sao lưu: <strong className="font-mono bg-white px-1.5 py-0.5 rounded border border-amber-300">{confirmRestoreItem.name}</strong>
+                      </p>
+                      <div className="flex flex-wrap items-center gap-3 text-xs text-amber-800 font-medium pt-1">
+                        <span>• Nguồn: {confirmRestoreItem.source === 'drive' ? 'Google Drive (Thư mục Backup)' : confirmRestoreItem.source === 'local' ? 'Tệp tin từ máy tính' : 'Lịch sử sao lưu'}</span>
+                        <span>• Thời gian: {confirmRestoreItem.date}</span>
+                        <span>• Số lĩnh vực: {confirmRestoreItem.sections?.length || 8} lĩnh vực</span>
+                      </div>
+                      <p className="text-xs font-semibold text-rose-700 pt-1">
+                        ⚠️ Toàn bộ điểm tự chấm và danh sách minh chứng của năm {selectedYear} trên trang này sẽ được cập nhật và đồng bộ tức thì sang Firebase để các máy tính khác cùng hiển thị.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-end gap-2 pt-2 border-t border-amber-200">
+                    <button
+                      onClick={() => setConfirmRestoreItem(null)}
+                      className="px-4 py-2 rounded-lg bg-white border border-slate-300 text-slate-700 text-xs font-semibold hover:bg-slate-100 transition cursor-pointer"
+                    >
+                      Hủy bỏ
+                    </button>
+                    <button
+                      onClick={handleExecuteRestore}
+                      className="px-5 py-2 rounded-lg bg-red-700 hover:bg-red-800 text-white text-xs font-bold shadow-md transition flex items-center gap-2 cursor-pointer"
+                    >
+                      <Check className="w-4 h-4 text-amber-300" />
+                      <span>Xác nhận Khôi Phục &amp; Đồng Bộ Firebase</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Status Feedback Banners */}
+              {restoreSuccess && (
+                <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-medium flex items-center gap-2.5 shadow-2xs">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span>{restoreSuccess}</span>
+                </div>
+              )}
+
+              {restoreError && (
+                <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium flex items-center gap-2.5 shadow-2xs">
+                  <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
+                  <span>{restoreError}</span>
+                </div>
+              )}
+
+              {/* Section 1: Tạo bản sao lưu (Backup) */}
+              <div className="p-5 rounded-2xl border border-slate-200 bg-white shadow-xs space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-slate-100 pb-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="p-2 rounded-lg bg-indigo-100 text-indigo-700">
+                      <Database className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-bold text-slate-900">
+                        1. Tạo Bản Sao Lưu Dữ Liệu (Backup)
+                      </h4>
+                      <p className="text-xs text-slate-500">
+                        Lưu toàn bộ điểm số, phân công phòng ban và danh sách liên kết minh chứng vào thư mục Backup trên Google Drive hoặc tải về máy tính.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Summary Badges */}
+                  <div className="flex items-center gap-2 text-[11px] font-mono text-slate-600 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200 shrink-0">
+                    <span>Năm: <strong className="text-slate-900">{selectedYear}</strong></span>
+                    <span>•</span>
+                    <span>Điểm: <strong className="text-indigo-700">{evaluation.finalScore}đ</strong></span>
+                    <span>•</span>
+                    <span>Minh chứng: <strong className="text-emerald-700">{evaluation.totalEvidenceCount}</strong></span>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-3">
+                  <button
+                    onClick={handleCreateDriveBackup}
+                    disabled={isBackingUp}
+                    className="px-5 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white rounded-xl text-xs font-bold transition flex items-center gap-2 shadow-md hover:shadow-lg cursor-pointer disabled:opacity-50"
+                  >
+                    <CloudUpload className={`w-4 h-4 text-emerald-200 ${isBackingUp ? 'animate-bounce' : ''}`} />
+                    <span>{isBackingUp ? 'Đang tạo tệp & tải lên Drive...' : 'Sao lưu lên Google Drive (Thư mục Backup)'}</span>
+                  </button>
+
+                  <button
+                    onClick={handleExportBackup}
+                    className="px-4 py-2.5 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-bold transition flex items-center gap-2 shadow-2xs cursor-pointer"
+                  >
+                    <Download className="w-4 h-4 text-slate-500" />
+                    <span>Tải bản sao lưu về máy tính (.JSON)</span>
+                  </button>
+                </div>
+
+                {backupMsg && (
+                  <div className={`p-3.5 rounded-xl border text-xs font-medium flex items-center justify-between gap-3 ${
+                    backupMsg.type === 'success'
+                      ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
+                      : 'bg-rose-50 border-rose-200 text-rose-800'
+                  }`}>
+                    <div className="flex items-center gap-2">
+                      {backupMsg.type === 'success' ? (
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                      ) : (
+                        <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
+                      )}
+                      <span>{backupMsg.text}</span>
+                    </div>
+                    {backupMsg.url && (
+                      <a
+                        href={backupMsg.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="px-2.5 py-1 rounded-md bg-white border border-emerald-300 text-emerald-700 hover:bg-emerald-100 text-[11px] font-bold flex items-center gap-1 shrink-0"
+                      >
+                        <ExternalLink className="w-3 h-3" />
+                        <span>Mở trên Drive</span>
+                      </a>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Section 2: Khôi phục dữ liệu (Restore) */}
+              <div className="p-5 rounded-2xl border border-slate-200 bg-white shadow-xs space-y-4">
+                <div className="flex items-center gap-2.5 border-b border-slate-100 pb-3">
+                  <div className="p-2 rounded-lg bg-sky-100 text-sky-700">
+                    <RefreshCw className="w-5 h-5" />
                   </div>
                   <div>
-                    <h4 className="font-bold text-sm">Xuất Bản &amp; Hoạt Động Trực Tiếp Trên GitHub Pages</h4>
-                    <p className="text-xs text-slate-400">
-                      Ứng dụng đã được tối ưu tĩnh 100%, chạy trực tiếp trên GitHub Pages mà không cần bất kỳ máy chủ nào.
+                    <h4 className="text-sm font-bold text-slate-900">
+                      2. Khôi Phục Dữ Liệu (Restore)
+                    </h4>
+                    <p className="text-xs text-slate-500">
+                      Khôi phục dữ liệu bộ chỉ số từ danh sách trên Google Drive hoặc tải tệp JSON từ máy tính lên.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+                  {/* Option A: List on Google Drive (2 cols) */}
+                  <div className="lg:col-span-2 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h5 className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-2">
+                        <HardDrive className="w-3.5 h-3.5 text-sky-600" />
+                        <span>Các bản sao lưu trong thư mục Backup trên Google Drive</span>
+                      </h5>
+                      <button
+                        onClick={fetchDriveBackups}
+                        disabled={isLoadingDriveBackups}
+                        className="px-2.5 py-1 text-[11px] font-semibold rounded-md bg-slate-100 hover:bg-slate-200 text-slate-700 transition flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                        title="Làm mới danh sách từ Drive"
+                      >
+                        <RefreshCw className={`w-3 h-3 ${isLoadingDriveBackups ? 'animate-spin' : ''}`} />
+                        <span>Làm mới</span>
+                      </button>
+                    </div>
+
+                    <div className="border border-slate-200 rounded-xl overflow-hidden bg-slate-50/50">
+                      {isLoadingDriveBackups ? (
+                        <div className="p-6 text-center text-xs text-slate-500 flex items-center justify-center gap-2">
+                          <RefreshCw className="w-4 h-4 animate-spin text-sky-600" />
+                          <span>Đang kiểm tra thư mục Backup trên Google Drive...</span>
+                        </div>
+                      ) : driveBackups.length > 0 ? (
+                        <div className="divide-y divide-slate-200 max-h-64 overflow-y-auto">
+                          {driveBackups.map((bk) => (
+                            <div key={bk.id} className="p-3 hover:bg-sky-50/40 transition flex items-center justify-between gap-3">
+                              <div className="min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <FileText className="w-4 h-4 text-sky-600 shrink-0" />
+                                  <span className="text-xs font-bold text-slate-800 font-mono truncate">
+                                    {bk.name}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-3 text-[10px] text-slate-500 mt-1 pl-6">
+                                  <span>Kích thước: {bk.size}</span>
+                                  <span>•</span>
+                                  <span>Tạo lúc: {bk.date}</span>
+                                </div>
+                              </div>
+
+                              <div className="flex items-center gap-1.5 shrink-0">
+                                {bk.viewUrl && (
+                                  <a
+                                    href={bk.viewUrl}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="p-1.5 rounded-lg text-slate-500 hover:text-sky-700 hover:bg-sky-100 transition"
+                                    title="Mở tệp trên Drive"
+                                  >
+                                    <ExternalLink className="w-3.5 h-3.5" />
+                                  </a>
+                                )}
+                                <button
+                                  onClick={() => handleInitiateRestoreFromDrive(bk)}
+                                  disabled={restoringId === bk.id}
+                                  className="px-3 py-1.5 bg-sky-600 hover:bg-sky-700 text-white rounded-lg text-xs font-bold transition flex items-center gap-1 shadow-2xs cursor-pointer disabled:opacity-50"
+                                >
+                                  {restoringId === bk.id ? (
+                                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                                  ) : (
+                                    <RefreshCw className="w-3.5 h-3.5" />
+                                  )}
+                                  <span>Khôi phục</span>
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="p-6 text-center text-xs text-slate-500 space-y-1">
+                          <p className="font-semibold text-slate-700">Chưa tìm thấy tệp sao lưu nào trong thư mục Backup trên Google Drive.</p>
+                          <p className="text-[11px] text-slate-400">Hãy nhấn nút <strong>"Sao lưu lên Google Drive"</strong> ở trên để tạo bản lưu đầu tiên.</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Option B: Local JSON Upload (1 col) */}
+                  <div className="space-y-3">
+                    <h5 className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-2">
+                      <Upload className="w-3.5 h-3.5 text-indigo-600" />
+                      <span>Hoặc tải tệp JSON từ máy tính</span>
+                    </h5>
+
+                    <div className="border border-dashed border-slate-300 rounded-xl p-4 bg-slate-50/70 text-center space-y-3">
+                      <div className="w-10 h-10 rounded-full bg-indigo-100 text-indigo-600 mx-auto flex items-center justify-center">
+                        <Upload className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-slate-800">Khôi phục từ tệp .JSON</p>
+                        <p className="text-[11px] text-slate-500 mt-0.5">
+                          Chọn tệp sao lưu chuẩn CCHC đã xuất về máy tính trước đây.
+                        </p>
+                      </div>
+
+                      <label className="inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold shadow-2xs transition cursor-pointer">
+                        <Upload className="w-3.5 h-3.5" />
+                        <span>Chọn tệp JSON...</span>
+                        <input
+                          type="file"
+                          accept=".json"
+                          onChange={handleImportBackup}
+                          className="hidden"
+                        />
+                      </label>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Local Backup History (if any) */}
+                {backupHistory.length > 0 && (
+                  <div className="pt-3 border-t border-slate-100 space-y-2">
+                    <h5 className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                      <FolderTree className="w-3.5 h-3.5 text-slate-500" />
+                      <span>Lịch sử các bản sao lưu đã tạo gần đây ({backupHistory.length})</span>
+                    </h5>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {backupHistory.slice(0, 6).map((h) => (
+                        <div key={h.id} className="p-2.5 rounded-lg border border-slate-200 bg-slate-50 flex items-center justify-between gap-2 text-xs">
+                          <div className="min-w-0">
+                            <p className="font-mono font-bold text-slate-800 truncate text-[11px]">{h.fileName}</p>
+                            <p className="text-[10px] text-slate-500">{h.createdAt} • {h.finalScore}đ ({h.totalEvidence} MC)</p>
+                          </div>
+                          <div className="flex items-center gap-1 shrink-0">
+                            {h.fileUrl && (
+                              <a
+                                href={h.fileUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="p-1 rounded text-slate-400 hover:text-sky-600"
+                                title="Xem trên Drive"
+                              >
+                                <ExternalLink className="w-3 h-3" />
+                              </a>
+                            )}
+                            <button
+                              onClick={() => handleInitiateRestoreFromHistory(h)}
+                              className="px-2 py-1 rounded bg-white border border-slate-300 text-slate-700 hover:bg-slate-100 text-[10px] font-bold cursor-pointer"
+                            >
+                              Khôi phục
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* GitHub Pages Informational Card */}
+              <div className="p-4 rounded-xl bg-slate-900 text-white flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-white/10 text-white border border-white/20 shrink-0">
+                    <Github className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h5 className="font-bold text-xs text-white">Xuất Bản &amp; Hoạt Động Trực Tiếp Trên GitHub Pages</h5>
+                    <p className="text-[11px] text-slate-400">
+                      Ứng dụng hoạt động 100% tĩnh trên GitHub Pages, tự động kết nối Firebase và Google Drive của Phường.
                     </p>
                   </div>
                 </div>
@@ -1284,58 +1589,13 @@ export const SystemSettingsModal: React.FC<SystemSettingsModalProps> = ({
                   href="https://github.com"
                   target="_blank"
                   rel="noreferrer"
-                  className="px-3.5 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white text-xs font-semibold flex items-center gap-1.5 border border-white/20"
+                  className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white text-xs font-semibold flex items-center gap-1.5 border border-white/20 shrink-0"
                 >
                   <ExternalLink className="w-3.5 h-3.5" />
                   <span>Mở GitHub</span>
                 </a>
               </div>
 
-              {/* Backup & Restore Data section */}
-              <div className="p-4 rounded-xl border border-slate-200 bg-slate-50 space-y-3">
-                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-2">
-                  <Database className="w-4 h-4 text-slate-600" />
-                  Sao Lưu &amp; Khôi Phục Dữ Liệu Bộ Chỉ Số Năm {selectedYear}
-                </h4>
-                <p className="text-xs text-slate-600">
-                  Tải xuống toàn bộ dữ liệu tự chấm điểm, phân công phòng ban và danh sách tệp minh chứng Google Drive thành tệp JSON để lưu trữ an toàn hoặc chuyển sang máy tính khác.
-                </p>
-
-                <div className="flex flex-wrap items-center gap-3 pt-1">
-                  <button
-                    onClick={handleExportBackup}
-                    className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold transition flex items-center gap-1.5 shadow-sm cursor-pointer"
-                  >
-                    <Download className="w-3.5 h-3.5" />
-                    <span>Xuất tệp sao lưu JSON năm {selectedYear}</span>
-                  </button>
-
-                  <label className="px-4 py-2 bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer">
-                    <Upload className="w-3.5 h-3.5" />
-                    <span>Khôi phục dữ liệu từ file JSON</span>
-                    <input
-                      type="file"
-                      accept=".json"
-                      onChange={handleImportBackup}
-                      className="hidden"
-                    />
-                  </label>
-                </div>
-
-                {restoreSuccess && (
-                  <div className="p-3 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                    <span>{restoreSuccess}</span>
-                  </div>
-                )}
-
-                {restoreError && (
-                  <div className="p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center gap-2">
-                    <AlertTriangle className="w-4 h-4 text-rose-600" />
-                    <span>{restoreError}</span>
-                  </div>
-                )}
-              </div>
             </div>
           )}
 

@@ -109,7 +109,7 @@ export default function App() {
 
   // System Settings Modal & Authentication State
   const [isSystemSettingsOpen, setIsSystemSettingsOpen] = useState<boolean>(false);
-  const [systemSettingsTab, setSystemSettingsTab] = useState<'years' | 'evidence' | 'gas' | 'github' | 'firebase'>('years');
+  const [systemSettingsTab, setSystemSettingsTab] = useState<'years' | 'evidence' | 'gas' | 'backup' | 'github' | 'firebase'>('years');
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState<boolean>(false);
 
   // Other Modal States
@@ -195,45 +195,7 @@ export default function App() {
       // 2. Save to shared server store
       await saveToLocalServerStore(stateData);
 
-      // 3. Save directly into Google Drive via Google Apps Script
-      if (gasConfig.webAppUrl) {
-        try {
-          const jsonString = JSON.stringify(stateData, null, 2);
-          const base64Data = 'data:application/json;base64,' + btoa(unescape(encodeURIComponent(jsonString)));
-
-          const uploadRes = await sendGasRequest(gasConfig.webAppUrl, {
-            action: 'uploadFile',
-            fileName: `Nhat_Ky_Cap_Nhat_CCHC_${selectedYear}.json`,
-            base64Data: base64Data,
-            mimeType: 'application/json',
-            sectionName: 'Nhat_Ky_He_Thong',
-            criterionCode: 'LOG',
-            note: reason,
-          }, 15000);
-
-          if (uploadRes && uploadRes.success && uploadRes.data?.fileId) {
-            setDriveFileId(uploadRes.data.fileId);
-            localStorage.setItem(LOCAL_STORAGE_KEY_DRIVE_FILE_ID, uploadRes.data.fileId);
-          }
-
-          try {
-            await sendGasRequest(gasConfig.webAppUrl, {
-              action: 'syncData',
-              sections: currentSections,
-              evaluation: evaluationSummary,
-              lastUpdated: timestampIso,
-              lastUpdatedTimestamp: timestampMs,
-              note: reason,
-              criterionCode: criterionCode || 'TOÀN BỘ',
-              updatedBy: 'UBND Phường Hội An Đông',
-            }, 10000);
-          } catch (_) {}
-        } catch (e) {
-          console.warn('Google Drive sync warning:', e);
-        }
-      }
-
-      // 4. Save to Firebase Firestore
+      // 3. Save to Firebase Firestore (đồng bộ tức thì sang tất cả các máy khác)
       try {
         const fbOk = await saveToFirebase(stateData);
         if (fbOk) {
@@ -386,7 +348,7 @@ export default function App() {
   };
 
   // Password verification & open System Settings
-  const handleRequestOpenSystemSettings = (tab: 'years' | 'evidence' | 'gas' | 'github' | 'firebase' = 'years') => {
+  const handleRequestOpenSystemSettings = (tab: 'years' | 'evidence' | 'gas' | 'backup' | 'github' | 'firebase' = 'years') => {
     setSystemSettingsTab(tab);
     const isAuth = sessionStorage.getItem('cchc_system_auth') === 'tsvmmm123';
     if (isAuth) {

@@ -67,6 +67,7 @@ export const CriterionDetailModal: React.FC<CriterionDetailModalProps> = ({
     message: string;
     driveUrl?: string;
   } | null>(null);
+  const [unuploadedWarning, setUnuploadedWarning] = useState<string | null>(null);
 
   const isPenalty = section.type === 'penalty';
   const isBonus = section.type === 'bonus';
@@ -250,8 +251,9 @@ export const CriterionDetailModal: React.FC<CriterionDetailModalProps> = ({
     }
   };
 
-  const handleSave = async () => {
+  const executeFinalSave = async () => {
     setIsSaving(true);
+    setUnuploadedWarning(null);
     try {
       const validated = validateCriterionScore(selfScore, criterion.maxScore);
       await onSaveCriterion({
@@ -268,6 +270,22 @@ export const CriterionDetailModal: React.FC<CriterionDetailModalProps> = ({
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const handleSave = async () => {
+    // 1. Kiểm tra nếu đang có tệp đang tải lên Google Drive
+    if (isUploading) {
+      setUnuploadedWarning('Hệ thống đang tải tệp minh chứng lên Google Drive. Vui lòng đợi hoàn tất trước khi bấm Lưu!');
+      return;
+    }
+
+    // 2. Kiểm tra nếu người dùng đã chọn tệp nhưng chưa bấm tải lên
+    if (showAddForm && (selectedFileObj || customDriveUrl.trim())) {
+      setUnuploadedWarning('Bạn đang có tệp minh chứng đã chọn nhưng chưa bấm "Tải lên Google Drive". Hãy bấm nút Tải lên Google Drive trước, hoặc bấm "Bỏ qua & Lưu" nếu không cần tệp này.');
+      return;
+    }
+
+    await executeFinalSave();
   };
 
   return (
@@ -650,11 +668,37 @@ export const CriterionDetailModal: React.FC<CriterionDetailModalProps> = ({
           </div>
         </div>
 
+        {/* Unuploaded Warning Banner */}
+        {unuploadedWarning && (
+          <div className="bg-amber-50 border-t border-amber-200 px-4 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 text-xs text-amber-900 animate-in fade-in">
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+              <span className="font-medium">{unuploadedWarning}</span>
+            </div>
+            <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
+              <button
+                onClick={() => setUnuploadedWarning(null)}
+                className="px-2.5 py-1 rounded-md bg-white border border-amber-300 text-amber-800 text-[11px] font-semibold hover:bg-amber-100 transition cursor-pointer"
+              >
+                Đóng
+              </button>
+              {showAddForm && (selectedFileObj || customDriveUrl.trim()) && !isUploading && (
+                <button
+                  onClick={executeFinalSave}
+                  className="px-3 py-1 rounded-md bg-amber-600 text-white text-[11px] font-bold hover:bg-amber-700 transition cursor-pointer shadow-xs"
+                >
+                  Bỏ qua tệp &amp; Lưu ngay
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Modal Footer */}
         <div className="bg-slate-50 p-4 border-t border-slate-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div className="text-xs text-slate-500 flex items-center gap-1.5">
             <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            <span>Chỉ lưu và phát đồng bộ sang các máy khác khi bạn bấm nút <strong>"Lưu & Đồng bộ"</strong></span>
+            <span>Bấm nút <strong>"Lưu"</strong> để cập nhật dữ liệu lên Firebase và đồng bộ thời gian thực sang các máy khác.</span>
           </div>
           <div className="flex items-center gap-2 self-end sm:self-auto">
             <button
@@ -667,17 +711,23 @@ export const CriterionDetailModal: React.FC<CriterionDetailModalProps> = ({
             <button
               onClick={handleSave}
               disabled={isSaving || isUploading}
-              className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-red-700 to-red-800 hover:from-red-800 hover:to-red-900 text-white text-xs font-bold shadow-md hover:shadow-lg transition flex items-center gap-2 cursor-pointer disabled:opacity-50"
+              className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-red-700 to-red-800 hover:from-red-800 hover:to-red-900 text-white text-xs font-bold shadow-md hover:shadow-lg transition flex items-center gap-2 cursor-pointer disabled:opacity-50"
+              title="Lưu dữ liệu lên Firebase và cập nhật tức thì sang các máy khác"
             >
               {isSaving ? (
                 <>
                   <RefreshCw className="w-4 h-4 animate-spin text-amber-300" />
-                  <span>Đang Lưu & Đồng Bộ...</span>
+                  <span>Đang lưu...</span>
+                </>
+              ) : isUploading ? (
+                <>
+                  <RefreshCw className="w-4 h-4 animate-spin text-amber-300" />
+                  <span>Đang tải minh chứng...</span>
                 </>
               ) : (
                 <>
                   <Save className="w-4 h-4 text-amber-300" />
-                  <span>Lưu & Đồng Bộ Thiết Bị</span>
+                  <span>Lưu</span>
                 </>
               )}
             </button>

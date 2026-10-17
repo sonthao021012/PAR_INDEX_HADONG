@@ -255,13 +255,18 @@ function doPost(e) {
       }
 
       const rootFolder = getOrCreateRootFolder();
-      const sectionFolder = getOrCreateSubFolder(rootFolder, sectionName);
-      const criterionFolder = getOrCreateSubFolder(sectionFolder, criterionCode);
+      let targetFolder = rootFolder;
+      if (sectionName === "Backup") {
+        targetFolder = getOrCreateSubFolder(rootFolder, "Backup");
+      } else {
+        const sectionFolder = getOrCreateSubFolder(rootFolder, sectionName);
+        targetFolder = criterionCode ? getOrCreateSubFolder(sectionFolder, criterionCode) : sectionFolder;
+      }
 
       const rawBase64 = base64Data.indexOf(",") > -1 ? base64Data.split(",")[1] : base64Data;
       const decodedBytes = Utilities.base64Decode(rawBase64);
       const blob = Utilities.newBlob(decodedBytes, mimeType, fileName);
-      const driveFile = criterionFolder.createFile(blob);
+      const driveFile = targetFolder.createFile(blob);
       
       driveFile.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
 
@@ -269,7 +274,7 @@ function doPost(e) {
         fileName: fileName,
         fileUrl: driveFile.getUrl(),
         fileId: driveFile.getId(),
-        criterionCode: criterionCode,
+        criterionCode: criterionCode || "BACKUP",
         documentNumber: documentNumber,
         note: note,
         uploadDate: new Date()
@@ -281,8 +286,39 @@ function doPost(e) {
         downloadUrl: driveFile.getDownloadUrl(),
         viewUrl: "https://drive.google.com/file/d/" + driveFile.getId() + "/view?usp=sharing",
         fileName: fileName,
-        folderPath: ROOT_FOLDER_NAME + " > " + sectionName + " > " + criterionCode
+        folderPath: ROOT_FOLDER_NAME + " > " + (sectionName === "Backup" ? "Backup" : (sectionName + " > " + criterionCode))
       });
+    }
+
+    // LẤY DANH SÁCH BẢN SAO LƯU TRONG THƯ MỤC BACKUP
+    if (action === "getBackupFiles") {
+      const rootFolder = getOrCreateRootFolder();
+      const backupFolder = getOrCreateSubFolder(rootFolder, "Backup");
+      const files = backupFolder.getFiles();
+      const backupList = [];
+      while (files.hasNext()) {
+        const f = files.next();
+        if (f.getName().indexOf(".json") > -1) {
+          backupList.push({
+            id: f.getId(),
+            name: f.getName(),
+            size: (f.getSize() / 1024).toFixed(1) + " KB",
+            date: Utilities.formatDate(f.getDateCreated(), "GMT+7", "yyyy-MM-dd HH:mm:ss"),
+            viewUrl: "https://drive.google.com/file/d/" + f.getId() + "/view?usp=sharing"
+          });
+        }
+      }
+      return responseSuccess({ files: backupList });
+    }
+
+    // ĐỌC NỘI DUNG TỆP SAO LƯU TỪ GOOGLE DRIVE
+    if (action === "readBackupFile") {
+      const fileId = postData.fileId;
+      if (!fileId) return responseError("Thiếu mã tệp fileId!");
+      const file = DriveApp.getFileById(fileId);
+      const content = file.getBlob().getDataAsString();
+      return responseSuccess({ content: content, fileName: file.getName() });
+    }
     }
 
     // XÓA FILE MINH CHỨNG TRÊN GOOGLE DRIVE (CHUYỂN VÀO THÙNG RÁC)

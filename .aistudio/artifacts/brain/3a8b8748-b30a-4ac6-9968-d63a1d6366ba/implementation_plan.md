@@ -1,47 +1,57 @@
-# Kế hoạch tối ưu hóa: Chỉ cập nhật khi người dùng hoàn thành và đồng bộ đa thiết bị tức thì
+# Kế hoạch triển khai: Tinh chỉnh nút Lưu, Tích hợp Backup/Restore Google Drive và Tinh gọn Cài Đặt Hệ Thống
 
 ## 1. Mục tiêu
-- **Chấm dứt việc tự động đồng bộ liên tục (auto-sync / auto-refresh debounce 1.5s)**: Loại bỏ các lệnh gọi Google Apps Script, Google Drive và Firebase Firestore tự động sau mỗi thao tác nhỏ gây giật trang, lặp lại và tiêu hao token/hạn mức mạng.
-- **Lưu có kiểm soát theo yêu cầu người dùng**: Dữ liệu chỉ được đóng gói, lưu trữ và phát đi khi người dùng nhấn nút **"Lưu thay đổi"** trong cửa sổ chỉnh sửa tiêu chí (`CriterionDetailModal`), hoặc khi người dùng chủ động bấm **"Đồng bộ ngay"** trên thanh tiêu đề.
-- **Đồng bộ thời gian thực sang các máy khác**: Khi một máy nhấn "Lưu", bản ghi mới sẽ được gửi ngay lập tức lên Firebase Firestore và máy chủ chia sẻ; các máy/trang ứng dụng khác đang mở sẽ tự động cập nhật ngay lập tức mà không làm phiền người dùng đang nhập liệu.
+1. **Đổi nút "Lưu & Đồng bộ Thiết Bị" thành nút "Lưu"**:
+   - Chỉ lưu dữ liệu lên Firebase Firestore và phát đồng bộ thời gian thực sang các máy khác.
+   - Không tạo tệp `.json` trong thư mục `LOG` trên Google Drive nữa để tránh lãng phí dung lượng và làm rác thư mục Drive.
+   - Kiểm tra và đảm bảo toàn bộ thao tác tải file minh chứng lên Drive đã hoàn tất trước khi cho phép Lưu.
+2. **Xây dựng tính năng Sao lưu (Backup) & Khôi phục (Restore) trong "CÀI ĐẶT HỆ THỐNG"**:
+   - Nút **"Sao lưu lên Google Drive"**: Tự động tạo tệp `Backup_CCHC_[Năm]_[NgàyGiờ].json` vào thư mục `Backup` trên Google Drive thông qua Google Apps Script.
+   - Nút **"Tải bản sao lưu về máy tính"**: Tải tệp JSON về máy dự phòng ngoại tuyến.
+   - Tính năng **Khôi phục (Restore)**: Cho phép khôi phục từ danh sách tệp trong thư mục `Backup` trên Google Drive hoặc tải tệp `.json` từ máy tính lên.
+3. **Tinh gọn "CÀI ĐẶT HỆ THỐNG"**:
+   - Loại bỏ 2 tính năng không cần thiết: *"Dán & Nhận Diện Hàng loạt Link Drive"* và *"Quét thư mục Google drive"*.
+   - Giữ lại giao diện quản lý minh chứng trực quan, gọn gàng và dễ sử dụng.
 
 ---
 
-## 2. Các thay đổi kỹ thuật chi tiết
+## 2. Chi tiết các tệp cần chỉnh sửa
 
-### A. Loại bỏ Auto-Sync Debounce trong `src/App.tsx`
-- **Xóa bỏ hook `useEffect` debounce 1500ms**: Hiện tại hook này tự động kích hoạt `syncWithDrive` mỗi khi `sections` thay đổi, tạo ra các chu kỳ gửi file JSON lên Drive và ghi Firestore liên tục.
-- **Chuyển `syncWithDrive` thành hành động có chủ đích**:
-  - Được kích hoạt trực tiếp từ `handleSaveCriterion` sau khi người dùng bấm nút Lưu trong `CriterionDetailModal`.
-  - Được kích hoạt khi bấm nút "Đồng bộ ngay" (`onSyncNow`) ở Header.
-  - Được kích hoạt khi tạo hoặc xóa năm đánh giá trong Cài đặt hệ thống.
+### A. `src/components/CriterionDetailModal.tsx`
+- Đổi tên nút thành **"Lưu"** với icon `Save`.
+- Thêm bước kiểm tra an toàn:
+  - Vô hiệu hóa nút và hiển thị cảnh báo nếu đang trong quá trình tải tệp minh chứng lên Google Drive (`isUploading`).
+  - Nếu người dùng đã chọn tệp nhưng chưa bấm "Tải lên", hiển thị nhắc nhở xác nhận trước khi lưu.
+- Gọi `onSaveCriterion` để cập nhật tiêu chí và phát đồng bộ Firebase.
 
-### B. Nâng cấp trải nghiệm lưu trong `CriterionDetailModal.tsx`
-- Giữ toàn bộ thay đổi (điểm tự chấm, trạng thái, cơ quan chủ trì, ghi chú, đính kèm/xóa minh chứng) trong state nội bộ của Modal.
-- Cải tiến nút **"Lưu & Đồng bộ dữ liệu"**:
-  - Thiết kế nổi bật, có biểu tượng trực quan và nhãn thể hiện rõ: *Lưu tiêu chí & đồng bộ tức thì sang các máy khác*.
-  - Hiển thị chỉ báo trạng thái đang lưu/đồng bộ để người dùng an tâm khi hoàn thành.
-  - Sau khi lưu thành công, Modal đóng lại và cập nhật bảng tổng hợp.
+### B. `src/App.tsx`
+- Cập nhật hàm `syncWithDrive`:
+  - Loại bỏ hoàn toàn khối code gọi `uploadFile` cho `Nhat_Ky_Cap_Nhat_CCHC_${year}.json` vào thư mục `LOG` trên Google Drive.
+  - Tập trung lưu vào Firebase Firestore, BroadcastChannel và Server Store để đồng bộ tức thì sang các máy khác.
+- Thêm handler xử lý Backup lên Google Drive:
+  - Tạo tệp `Backup_CCHC_${selectedYear}_${timestamp}.json` gửi lên Google Drive trong thư mục `Backup`.
+- Cập nhật handler Restore: Khôi phục dữ liệu từ tệp sao lưu, cập nhật state và đồng bộ sang Firebase.
 
-### C. Cơ chế đồng bộ đa thiết bị mượt mà (Firebase Firestore & BroadcastChannel)
-- Gắn mã nhận diện phiên làm việc (`senderSessionId`) vào mỗi gói tin cập nhật để:
-  - Máy thực hiện thao tác lưu: Không bị render lại đột ngột hay nhấp nháy giao diện.
-  - Các máy khác cùng mở ứng dụng: Lắng nghe qua Firebase `onSnapshot` / `BroadcastChannel`, nhận dữ liệu mới nhất và cập nhật giao diện mượt mà.
-  - Hiển thị thông báo Toast trang nhã: *"Đã nhận dữ liệu mới từ máy khác [Thời gian]"* mà không làm gián đoạn vị trí cuộn trang.
+### C. `src/components/SystemSettingsModal.tsx`
+- Loại bỏ 2 sub-tab/chức năng:
+  - Bỏ sub-tab `"batch"` (*Dán & Nhận Diện Hàng loạt Link Drive*).
+  - Bỏ sub-tab `"scan"` (*Quét thư mục Google drive*).
+- Thêm tab/khu vực **"Sao Lưu & Khôi Phục (Backup & Restore)"**:
+  - Giao diện thực hiện Sao lưu lên Google Drive (thư mục `Backup`).
+  - Giao diện Khôi phục dữ liệu (từ Drive hoặc tệp JSON từ máy tính).
+  - Hiển thị lịch sử các bản sao lưu và thông báo trạng thái rõ ràng.
 
-### D. Tối ưu hóa bảng tiêu chí `CriteriaTable.tsx`
-- Thao tác chấm điểm nhanh trên bảng tiêu chí sẽ hiển thị thông báo hoặc mở cửa sổ chi tiết để người dùng kiểm tra và lưu tập trung, tránh việc click đổi điểm làm kích hoạt reload ngầm.
+### D. Đồng bộ bản build cho GitHub Pages
+- Chạy `npm run build` để cập nhật đồng bộ các thay đổi mới vào thư mục `/docs` cho GitHub Pages.
 
 ---
 
-## 3. Các bước kiểm thử và xác minh
-1. **Kiểm tra lưu tiêu chí**:
-   - Mở modal tiêu chí bất kỳ (ví dụ I.1.a), thay đổi điểm, thêm ghi chú, đính kèm minh chứng.
-   - Xác nhận: Trong quá trình thao tác, hệ thống không gọi API Drive/Firebase hay tự động refresh.
-   - Nhấn nút "Lưu thay đổi": Kiểm tra dữ liệu được ghi nhận, lưu vào localStorage, cập nhật Firestore và Drive.
-2. **Kiểm tra đồng bộ đa máy / đa tab**:
-   - Mở 2 tab trình duyệt cùng lúc.
-   - Ở tab 1, chỉnh sửa và bấm nút "Lưu".
-   - Xác nhận: Tab 2 nhận được cập nhật tức thì với thông báo rõ ràng, không bị reload trang toàn phần.
-3. **Kiểm tra hiệu năng & token**:
-   - Đảm bảo không còn vòng lặp tải lại ngầm (idle state hoàn toàn yên tĩnh).
+## 3. Các bước kiểm tra & xác minh
+1. **Kiểm tra nút "Lưu" trong modal tiêu chí**:
+   - Thử sửa điểm và lưu: Xác nhận nút hiển thị chữ **"Lưu"**, lưu thành công lên Firebase, các máy khác nhận được cập nhật, và không sinh file trong thư mục `LOG` trên Drive.
+   - Thử chọn file tải lên: Xác nhận khi file chưa upload xong thì nút Lưu bị khóa an toàn.
+2. **Kiểm tra tính năng Backup & Restore**:
+   - Mở Cài Đặt Hệ Thống > Bấm "Sao lưu lên Google Drive": Xác nhận file sao lưu được tạo với tên theo ngày giờ vào thư mục `Backup`.
+   - Thử nghiệm Restore từ file JSON hoặc từ bản sao lưu: Xác nhận dữ liệu được khôi phục chính xác.
+3. **Kiểm tra Cài Đặt Hệ Thống**:
+   - Xác nhận đã bỏ hoàn toàn "Dán hàng loạt link Drive" và "Quét thư mục Google drive".
