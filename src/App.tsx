@@ -125,7 +125,7 @@ export default function App() {
   const isInitialMount = useRef<boolean>(true);
   const isInitialLoadCompleteRef = useRef<boolean>(false);
   const isSyncingRef = useRef<boolean>(false);
-  const lastLocalUpdateRef = useRef<number>(Date.now());
+  const lastLocalUpdateRef = useRef<number>(0);
   const clientSessionId = useRef<string>(
     'sess-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8)
   );
@@ -386,6 +386,12 @@ export default function App() {
               setLastSyncTime(syncTime);
               setFirebaseConnected(true);
               isInitialLoadCompleteRef.current = true;
+              try {
+                localStorage.setItem(`cchc_hoi_an_dong_sections_2026`, JSON.stringify(fbData.sections));
+                if (fbData.changeLog) {
+                  localStorage.setItem(`cchc_hoi_an_dong_changelog_2026`, JSON.stringify(fbData.changeLog));
+                }
+              } catch (_) {}
               return;
             }
           }
@@ -408,6 +414,12 @@ export default function App() {
               : new Date().toLocaleTimeString('vi-VN');
             setLastSyncTime(syncTime);
             isInitialLoadCompleteRef.current = true;
+            try {
+              localStorage.setItem(`cchc_hoi_an_dong_sections_2026`, JSON.stringify(storeData.sections));
+              if (storeData.changeLog) {
+                localStorage.setItem(`cchc_hoi_an_dong_changelog_2026`, JSON.stringify(storeData.changeLog));
+              }
+            } catch (_) {}
             return;
           }
         }
@@ -656,20 +668,18 @@ export default function App() {
   const handleSaveCriterion = async (updatedCriterion: CCHCSubCriterion) => {
     let oldCrit: CCHCSubCriterion | null = null;
 
-    let updatedSections: CCHCSection[] = [];
-    setSections((prevSections) => {
-      updatedSections = prevSections.map((sec) => ({
-        ...sec,
-        criteria: sec.criteria.map((crit) => {
-          if (crit.id === updatedCriterion.id) {
-            oldCrit = crit;
-            return updatedCriterion;
-          }
-          return crit;
-        }),
-      }));
-      return updatedSections;
-    });
+    const updatedSections = sections.map((sec) => ({
+      ...sec,
+      criteria: sec.criteria.map((crit) => {
+        if (crit.id === updatedCriterion.id || crit.code === updatedCriterion.code) {
+          oldCrit = crit;
+          return updatedCriterion;
+        }
+        return crit;
+      }),
+    }));
+
+    setSections(updatedSections);
 
     const logEntry: ChangeLogEntry = {
       id: 'log-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6),

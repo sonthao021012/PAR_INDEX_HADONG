@@ -1,1 +1,1244 @@
-{"year":2026,"sections":[],"changeLog":[{"id":"log-1792222226366-pmuj","timestamp":"07:30:26","criterionCode":"I.1.a","criterionTitle":"Kế hoạch CCHC giai đoạn 2026-2030: Ban hành đúng thời gian quy định","action":"Cập nhật tiến độ & minh chứng","newScore":0.5,"newStatus":"completed","note":"Cập nhật tiến độ: completed","updatedBy":"UBND Phường Hội An Đông","driveSynced":false},{"updatedBy":"UBND Phường Hội An Đông","criterionCode":"I.1.a","newScore":0.5,"id":"log-1792108936060-lm0f","note":"Cập nhật tiến độ: completed","driveSynced":true,"action":"Cập nhật tiến độ & minh chứng","oldStatus":"not_started","newStatus":"completed","oldScore":0,"criterionTitle":"Kế hoạch CCHC giai đoạn 2026-2030: Ban hành đúng thời gian quy định","timestamp":"00:02:16"}],"evaluation":{"totalBaseScore":0,"maxBaseScore":100,"totalBonusScore":0,"totalPenaltyScore":0,"finalScore":0,"completionPercentage":0,"ranking":"Trung bình","rankingColor":"rose","totalEvidenceCount":0,"totalCriteriaCount":0,"completedCriteriaCount":0},"lastUpdated":"2026-10-17T07:30:26.367Z","lastUpdatedTimestamp":1792222226367,"updatedBy":"UBND Phường Hội An Đông","note":"Cập nhật tiêu chí I.1.a","criterionCode":"I.1.a","senderSessionId":"sess-1792222200181-acp13y"}
+{
+  "evaluation": {
+    "totalPenaltyScore": 0,
+    "totalCriteriaCount": 89,
+    "totalBonusScore": 0,
+    "completedCriteriaCount": 8,
+    "finalScore": 9.5,
+    "rankingColor": "rose",
+    "totalEvidenceCount": 8,
+    "completionPercentage": 9,
+    "maxBaseScore": 100,
+    "totalBaseScore": 9.5,
+    "ranking": "Trung bình"
+  },
+  "note": "Cập nhật tiêu chí I.1.a",
+  "senderSessionId": "sess-1792229772832-y3938p",
+  "lastUpdatedTimestamp": 1792229794689,
+  "lastUpdated": "2026-10-17T09:36:34.689Z",
+  "criterionCode": "I.1.a",
+  "sections": [
+    {
+      "maxScore": 27,
+      "romanNumeral": "I",
+      "type": "base",
+      "id": "I",
+      "title": "CÔNG TÁC CHỈ ĐẠO, ĐIỀU HÀNH CẢI CÁCH HÀNH CHÍNH",
+      "criteria": [
+        {
+          "id": "I.1.a",
+          "department": "Văn phòng - Thống kê",
+          "code": "I.1.a",
+          "status": "completed",
+          "evidenceList": [],
+          "notes": "",
+          "maxScore": 0.5,
+          "selfScore": 0.5,
+          "title": "Kế hoạch CCHC giai đoạn 2026-2030: Ban hành đúng thời gian quy định",
+          "deadline": "15/06/2026"
+        },
+        {
+          "evidenceList": [
+            {
+              "url": "https://drive.google.com/file/d/1wyhWC-1gNEoI-zoGoHG5FjLWD1vSFU-2/view?usp=sharing",
+              "uploadedBy": "Google Drive Sync",
+              "uploadDate": "2026-10-16",
+              "name": "573..QD.UBND.29.05.2026.signed.signed.signed.pdf",
+              "size": "1845.8 KB",
+              "driveUrl": "https://drive.google.com/file/d/1wyhWC-1gNEoI-zoGoHG5FjLWD1vSFU-2/view?usp=sharing",
+              "id": "ev-drive-1wyhWC-1gNEoI-zoGoHG5FjLWD1vSFU-2",
+              "driveFileId": "1wyhWC-1gNEoI-zoGoHG5FjLWD1vSFU-2",
+              "type": "pdf",
+              "note": "Tự động quét từ Google Drive (CCHC_2026_UBND_Phuong_Hoi_An_Dong > I_CÔNG TÁC CHỈ ĐẠO, ĐI > I.1.b)"
+            }
+          ],
+          "code": "I.1.b",
+          "notes": "",
+          "scoringGuide": "Xác định đầy đủ các nhiệm vụ: chấm 1,5 điểm. Thiếu 01-02 nhiệm vụ: 0,5 điểm. Thiếu từ 02 nhiệm vụ trở lên: 0 điểm.",
+          "maxScore": 1.5,
+          "department": "Văn phòng - Thống kê",
+          "selfScore": 1.5,
+          "deadline": "15/06/2026",
+          "id": "I.1.b",
+          "status": "completed",
+          "title": "Kế hoạch CCHC giai đoạn 2026-2030: Xác định đầy đủ các nhiệm vụ theo Kế hoạch của UBND thành phố"
+        },
+        {
+          "selfScore": 1,
+          "id": "I.2.a",
+          "code": "I.2.a",
+          "department": "Văn phòng - Thống kê",
+          "status": "completed",
+          "scoringGuide": "Ban hành đúng thời hạn theo Công văn hướng dẫn của Sở Nội vụ: 1 điểm",
+          "deadline": "25/01/2026",
+          "maxScore": 1,
+          "title": "Xây dựng Kế hoạch CCHC hằng năm: Ban hành đúng thời hạn",
+          "evidenceList": [
+            {
+              "url": "https://drive.google.com/file/d/1FPM9Qr4dkmyl5YDF3dE6uPU7bHeh-_0J/view?usp=sharing",
+              "driveUrl": "https://drive.google.com/file/d/1FPM9Qr4dkmyl5YDF3dE6uPU7bHeh-_0J/view?usp=sharing",
+              "type": "pdf",
+              "note": "Tự động quét từ Google Drive (CCHC_2026_UBND_Phuong_Hoi_An_Dong > I_CÔNG TÁC CHỈ ĐẠO, ĐI > I.2.a)",
+              "id": "ev-drive-1FPM9Qr4dkmyl5YDF3dE6uPU7bHeh-_0J",
+              "name": "57.QĐ.UBND.16.01.2026.signed.signed.signed.pdf",
+              "driveFileId": "1FPM9Qr4dkmyl5YDF3dE6uPU7bHeh-_0J",
+              "size": "1337.5 KB",
+              "uploadedBy": "Google Drive Sync",
+              "uploadDate": "2026-10-16"
+            },
+            {
+              "type": "pdf",
+              "uploadDate": "2026-10-16",
+              "uploadedBy": "Google Drive Sync",
+              "note": "Tự động quét từ Google Drive (CCHC_2026_UBND_Phuong_Hoi_An_Dong > I_CÔNG TÁC CHỈ ĐẠO, ĐI > I.2.a)",
+              "driveUrl": "https://drive.google.com/file/d/1hnrKYm5NjpXClYvYfemWmvdJDUzGfJSE/view?usp=sharing",
+              "driveFileId": "1hnrKYm5NjpXClYvYfemWmvdJDUzGfJSE",
+              "id": "ev-drive-1hnrKYm5NjpXClYvYfemWmvdJDUzGfJSE",
+              "size": "1337.5 KB",
+              "url": "https://drive.google.com/file/d/1hnrKYm5NjpXClYvYfemWmvdJDUzGfJSE/view?usp=sharing",
+              "name": "57.QĐ.UBND.16.01.2026 Ke hoach CCHC 2026.pdf"
+            }
+          ]
+        },
+        {
+          "id": "I.2.b.1",
+          "scoringGuide": "Xác định đầy đủ các nhiệm vụ: 1 điểm; Thiếu 01 nhiệm vụ: 0,25 điểm; Thiếu từ 02 nhiệm vụ trở lên: 0 điểm.",
+          "department": "Văn phòng - Thống kê",
+          "maxScore": 1,
+          "code": "I.2.b.1",
+          "evidenceList": [
+            {
+              "note": "Nhập từ liên kết Google Drive",
+              "driveUrl": "https://drive.google.com/file/d/1YGN6xTV7rtOT9dGZUbcA4HS4qGdhKsmc/view?usp=sharing",
+              "type": "pdf",
+              "uploadedBy": "UBND Phường Hội An Đông",
+              "uploadDate": "2026-10-16",
+              "driveFileId": "1YGN6xTV7rtOT9dGZUbcA4HS4qGdhKsmc",
+              "id": "ev-batch-1YGN6xTV7rtOT9dGZUbcA4HS4qGdhKsmc",
+              "size": "Google Drive",
+              "name": "Kế hoạch CCHC I.2.b.1",
+              "url": "https://drive.google.com/file/d/1YGN6xTV7rtOT9dGZUbcA4HS4qGdhKsmc/view?usp=sharing"
+            }
+          ],
+          "selfScore": 1,
+          "title": "Chất lượng KH hằng năm: Xác định đầy đủ nhiệm vụ CCHC trên các lĩnh vực theo Kế hoạch thành phố",
+          "status": "completed"
+        },
+        {
+          "scoringGuide": "Xác định đầy đủ rõ trách nhiệm, lượng hóa tỷ lệ: 1 điểm; 01 nhiệm vụ chưa rõ: 0,25 điểm; từ 02 nhiệm vụ trở lên: 0 điểm.",
+          "code": "I.2.b.2",
+          "title": "Chất lượng KH hằng năm: Xác định rõ trách nhiệm, cụ thể hóa kết quả, lượng hóa tỷ lệ hoàn thành",
+          "selfScore": 0,
+          "maxScore": 1,
+          "evidenceList": [],
+          "department": "Văn phòng - Thống kê",
+          "status": "not_started",
+          "id": "I.2.b.2"
+        },
+        {
+          "department": "Ban Chỉ đạo CCHC phường",
+          "evidenceList": [],
+          "scoringGuide": "Tỷ lệ 100%: 2 điểm; Từ 80% đến <100%: Tỷ lệ đạt được * 1 điểm; Dưới 80%: 0 điểm.",
+          "maxScore": 2,
+          "title": "Mức độ hoàn thành Kế hoạch CCHC của đơn vị (Tỷ lệ nhiệm vụ hoàn thành có minh chứng)",
+          "selfScore": 0,
+          "code": "I.3",
+          "status": "not_started",
+          "id": "I.3"
+        },
+        {
+          "maxScore": 0.5,
+          "id": "I.4.a",
+          "department": "Tổ Kiểm tra Công vụ phường",
+          "selfScore": 0.5,
+          "code": "I.4.a",
+          "evidenceList": [
+            {
+              "uploadedBy": "Google Drive Sync",
+              "uploadDate": "2026-10-16",
+              "note": "Tự động quét từ Google Drive (CCHC_2026_UBND_Phuong_Hoi_An_Dong > I_CÔNG TÁC CHỈ ĐẠO, ĐI > I.4.a)",
+              "url": "https://drive.google.com/file/d/1Ws6FXD5ZY2y_5bbRgJJTnQLp5QGmucd_/view?usp=sharing",
+              "type": "pdf",
+              "name": "146.KH. KIEM TRA CCHC NAM 2026.pdf",
+              "driveFileId": "1Ws6FXD5ZY2y_5bbRgJJTnQLp5QGmucd_",
+              "id": "ev-drive-1Ws6FXD5ZY2y_5bbRgJJTnQLp5QGmucd_",
+              "size": "446.3 KB",
+              "driveUrl": "https://drive.google.com/file/d/1Ws6FXD5ZY2y_5bbRgJJTnQLp5QGmucd_/view?usp=sharing"
+            }
+          ],
+          "title": "Công tác kiểm tra CCHC: Có xây dựng kế hoạch kiểm tra",
+          "scoringGuide": "Có xây dựng kế hoạch kiểm tra đối với các bộ phận, đơn vị trực thuộc: 0,5 điểm",
+          "status": "completed"
+        },
+        {
+          "department": "Tổ Kiểm tra Công vụ phường",
+          "code": "I.4.b",
+          "evidenceList": [
+            {
+              "uploadedBy": "Google Drive Sync",
+              "driveFileId": "1tfUSQpPsw1F29cXdsc14qu9xkbtlMRgK",
+              "uploadDate": "2026-10-16",
+              "driveUrl": "https://drive.google.com/file/d/1tfUSQpPsw1F29cXdsc14qu9xkbtlMRgK/view?usp=sharing",
+              "note": "Tự động quét từ Google Drive (CCHC_2026_UBND_Phuong_Hoi_An_Dong > I_CÔNG TÁC CHỈ ĐẠO, ĐI > I.4.b)",
+              "type": "pdf",
+              "url": "https://drive.google.com/file/d/1tfUSQpPsw1F29cXdsc14qu9xkbtlMRgK/view?usp=sharing",
+              "name": "KIEM TRA TT PVHCC.rar",
+              "id": "ev-drive-1tfUSQpPsw1F29cXdsc14qu9xkbtlMRgK",
+              "size": "3726.0 KB"
+            }
+          ],
+          "scoringGuide": "Kiểm tra 100% các bộ phận/tổ dân phố: 1,5 điểm; Từ 50% đến <100%: 0,5 điểm; Dưới 50%: 0 điểm.",
+          "id": "I.4.b",
+          "title": "Tổ chức hoạt động kiểm tra công tác CCHC",
+          "selfScore": 1.5,
+          "status": "completed",
+          "maxScore": 1.5
+        },
+        {
+          "evidenceList": [],
+          "department": "Tổ Kiểm tra Công vụ phường",
+          "code": "I.4.c",
+          "selfScore": 0,
+          "scoringGuide": "Bao gồm hoàn thành ban hành văn bản, báo cáo kết luận trước 30/11: 1 điểm",
+          "maxScore": 1,
+          "id": "I.4.c",
+          "status": "not_started",
+          "title": "Hoàn thành việc kiểm tra CCHC đúng thời gian (trước ngày 30 tháng 11)",
+          "deadline": "30/11/2026"
+        },
+        {
+          "selfScore": 0,
+          "code": "I.4.d",
+          "evidenceList": [],
+          "id": "I.4.d",
+          "title": "Các đơn vị/bộ phận được kiểm tra có báo cáo khắc phục sau kiểm tra trong vòng 10 ngày",
+          "department": "Văn phòng - Thống kê",
+          "maxScore": 1,
+          "scoringGuide": "100% có báo cáo khắc phục đúng hạn (tối đa 10 ngày làm việc): 1 điểm; 90% đến <100%: 0,5 điểm; Dưới 90%: 0 điểm.",
+          "status": "not_started"
+        },
+        {
+          "evidenceList": [],
+          "maxScore": 1,
+          "status": "not_started",
+          "code": "I.5.a",
+          "scoringGuide": "Đầy đủ và đúng hạn: 1 điểm. Thiếu hoặc trễ mỗi báo cáo trừ 0,5 điểm.",
+          "id": "I.5.a",
+          "title": "Báo cáo CCHC trực tuyến: Đầy đủ và đúng thời hạn theo quy định",
+          "selfScore": 0,
+          "department": "Văn phòng - Thống kê"
+        },
+        {
+          "maxScore": 1,
+          "id": "I.5.b",
+          "selfScore": 0,
+          "title": "Báo cáo CCHC trực tuyến: Đầy đủ các nội dung theo mẫu yêu cầu",
+          "code": "I.5.b",
+          "scoringGuide": "Đầy đủ nội dung theo mẫu: 1 điểm. Mỗi báo cáo không đầy đủ trừ 0,5 điểm.",
+          "evidenceList": [],
+          "status": "not_started",
+          "department": "Văn phòng - Thống kê"
+        },
+        {
+          "evidenceList": [
+            {
+              "uploadDate": "2026-10-16",
+              "id": "ev-drive-1ooQSxoGCoKkFAdYGbWATthMIvkzS7u99",
+              "uploadedBy": "Google Drive Sync",
+              "url": "https://drive.google.com/file/d/1ooQSxoGCoKkFAdYGbWATthMIvkzS7u99/view?usp=sharing",
+              "type": "pdf",
+              "note": "Tự động quét từ Google Drive (CCHC_2026_UBND_Phuong_Hoi_An_Dong > I_CÔNG TÁC CHỈ ĐẠO, ĐI > I.6.a)",
+              "driveUrl": "https://drive.google.com/file/d/1ooQSxoGCoKkFAdYGbWATthMIvkzS7u99/view?usp=sharing",
+              "name": "50.KH.UBND.02.03.2026 Tuyen truyen CCHC.pdf",
+              "driveFileId": "1ooQSxoGCoKkFAdYGbWATthMIvkzS7u99",
+              "size": "748.2 KB"
+            }
+          ],
+          "selfScore": 1,
+          "code": "I.6.a",
+          "scoringGuide": "Từ 04 giải pháp trở lên: 1 điểm; 03 giải pháp: 0,5 điểm; 02 giải pháp: 0,25 điểm.",
+          "maxScore": 1,
+          "department": "Văn hóa - Xã hội",
+          "status": "completed",
+          "title": "Xây dựng KH tuyên truyền CCHC: Lượng hóa các nội dung triển khai trong năm 2026",
+          "id": "I.6.a"
+        },
+        {
+          "scoringGuide": "Có từ 04 giải pháp và hoàn thành theo kế hoạch: 1 điểm; 03 giải pháp: 0,5 điểm; 02 giải pháp: 0,25 điểm.",
+          "title": "Mức độ hoàn thành kế hoạch tuyên truyền CCHC",
+          "maxScore": 1,
+          "evidenceList": [],
+          "id": "I.6.b",
+          "department": "Văn hóa - Xã hội",
+          "code": "I.6.b",
+          "status": "not_started",
+          "selfScore": 0
+        },
+        {
+          "maxScore": 1,
+          "title": "Tuyên truyền trực quan: Đăng tải chuyên mục CCHC trên Trang TTĐT phường (>500 lượt xem)",
+          "selfScore": 0,
+          "department": "Văn hóa - Xã hội",
+          "code": "I.6.c.1",
+          "scoringGuide": "Đăng tải thường xuyên và có lượt truy cập trên 500 lượt: 1 điểm; dưới 500 lượt: 0 điểm.",
+          "status": "not_started",
+          "evidenceList": [],
+          "id": "I.6.c.1"
+        },
+        {
+          "scoringGuide": "Xây dựng thiết kế đồ họa tờ rơi số, tuyên truyền rộng rãi qua Zalo/mạng xã hội tổ dân phố: 0,5 điểm",
+          "department": "Văn hóa - Xã hội",
+          "id": "I.6.c.2",
+          "status": "not_started",
+          "evidenceList": [],
+          "code": "I.6.c.2",
+          "selfScore": 0,
+          "title": "Tuyên truyền trực quan: Thiết kế tờ rơi, infographic, hồ sơ mẫu CĐS qua Zalo/Facebook",
+          "maxScore": 0.5
+        },
+        {
+          "department": "Văn hóa - Xã hội",
+          "evidenceList": [],
+          "status": "not_started",
+          "code": "I.6.c.3",
+          "scoringGuide": "Video clip có mô tả, thuyết minh, phụ đề đạt từ 500 lượt xem trở lên: 1 điểm; quay đơn điệu điện thoại: 0,5 điểm.",
+          "id": "I.6.c.3",
+          "selfScore": 0,
+          "title": "Xây dựng video clip tuyên truyền về công tác CCHC (có thuyết minh, >500 lượt xem)",
+          "maxScore": 1
+        },
+        {
+          "selfScore": 0,
+          "code": "I.6.d.1",
+          "department": "Đoàn Thanh niên & Văn phòng",
+          "status": "not_started",
+          "evidenceList": [],
+          "id": "I.6.d.1",
+          "maxScore": 1.5,
+          "scoringGuide": "Tổ chức Cuộc thi (trực tiếp, trực tuyến, sân khấu hóa...): 1,5 điểm",
+          "title": "Tổ chức Cuộc thi tìm hiểu về Cải cách hành chính, Chuyển đổi số"
+        },
+        {
+          "scoringGuide": "Tổ chức lớp tập huấn chuyên đề về CCHC, chuyển đổi số: 1 điểm",
+          "id": "I.6.d.2",
+          "evidenceList": [],
+          "title": "Tổ chức lớp tập huấn chuyên đề về CCHC, chuyển đổi số",
+          "selfScore": 0,
+          "maxScore": 1,
+          "department": "Văn phòng - Thống kê",
+          "status": "not_started",
+          "code": "I.6.d.2"
+        },
+        {
+          "department": "Văn phòng - Thống kê",
+          "title": "Chỉ đạo thực hiện Chỉ thị số 05-CT/TU của Ban Thường vụ Thành ủy",
+          "status": "completed",
+          "maxScore": 2.5,
+          "scoringGuide": "Xây dựng KH (0,5đ) + Đăng ký nhiệm vụ (0,5đ) + Mức độ hoàn thành các nhiệm vụ đã đăng ký (1,5đ)",
+          "id": "I.7.a",
+          "code": "I.7.a",
+          "selfScore": 2.5,
+          "evidenceList": [
+            {
+              "size": "408.6 KB",
+              "name": "125.KH.UBND.27.05.2026 Trien khai chi thi 05.pdf",
+              "driveFileId": "1DuUuS0BmqVdtHIbP3kvMVHkmIRENpPAO",
+              "note": "Tự động quét từ Google Drive (CCHC_2026_UBND_Phuong_Hoi_An_Dong > I_CÔNG TÁC CHỈ ĐẠO, ĐI > I.7.a)",
+              "type": "pdf",
+              "uploadDate": "2026-10-16",
+              "url": "https://drive.google.com/file/d/1DuUuS0BmqVdtHIbP3kvMVHkmIRENpPAO/view?usp=sharing",
+              "driveUrl": "https://drive.google.com/file/d/1DuUuS0BmqVdtHIbP3kvMVHkmIRENpPAO/view?usp=sharing",
+              "id": "ev-drive-1DuUuS0BmqVdtHIbP3kvMVHkmIRENpPAO",
+              "uploadedBy": "Google Drive Sync"
+            }
+          ]
+        },
+        {
+          "status": "not_started",
+          "evidenceList": [],
+          "code": "I.7.b",
+          "department": "Văn phòng - Thống kê",
+          "title": "Kế hoạch 233/KH-UBND và Kết luận 226-KL/TW về chấn chỉnh lề lối làm việc",
+          "scoringGuide": "Xây dựng kế hoạch thực hiện đảm bảo đầy đủ (0,5đ) + Báo cáo kết quả triển khai (1,0đ)",
+          "maxScore": 1.5,
+          "selfScore": 0,
+          "id": "I.7.b"
+        },
+        {
+          "status": "not_started",
+          "code": "I.8",
+          "department": "UBND Phường Hội An Đông",
+          "id": "I.8",
+          "title": "Đổi mới, sáng tạo trong triển khai nhiệm vụ CCHC (Sáng kiến, giải pháp mới)",
+          "evidenceList": [],
+          "maxScore": 3,
+          "selfScore": 0,
+          "scoringGuide": "Từ 3 sáng kiến hoặc giải pháp mới trở lên: 3 điểm; 2 sáng kiến: 2 điểm; 1 sáng kiến: 1 điểm; Không có: 0 điểm."
+        }
+      ]
+    },
+    {
+      "criteria": [
+        {
+          "scoringGuide": "Thực hiện đầy đủ theo quy định: 1 điểm; Có thực hiện nhưng chưa đầy đủ: 0,5 điểm; Không thực hiện: 0 điểm.",
+          "selfScore": 0,
+          "status": "not_started",
+          "code": "II.1",
+          "evidenceList": [],
+          "department": "Tư pháp - Hộ tịch",
+          "maxScore": 1,
+          "title": "Rà soát, tham mưu xử lý kết quả rà soát văn bản quy phạm pháp luật (VBQPPL)",
+          "id": "II.1"
+        },
+        {
+          "maxScore": 1,
+          "code": "II.2.a",
+          "title": "Thực hiện tự kiểm tra văn bản QPPL do đơn vị tham mưu ban hành",
+          "status": "not_started",
+          "evidenceList": [],
+          "scoringGuide": "Thực hiện đầy đủ theo quy định: 1 điểm; Chưa đầy đủ: 0,5 điểm; Không thực hiện: 0 điểm.",
+          "selfScore": 0,
+          "id": "II.2.a",
+          "department": "Tư pháp - Hộ tịch"
+        },
+        {
+          "department": "Tư pháp - Hộ tịch",
+          "scoringGuide": "Có thực hiện báo cáo: 1 điểm; Không thực hiện: 0 điểm.",
+          "evidenceList": [],
+          "maxScore": 1,
+          "status": "not_started",
+          "title": "Báo cáo kết quả tự kiểm tra văn bản QPPL",
+          "id": "II.2.b",
+          "selfScore": 0,
+          "code": "II.2.b"
+        },
+        {
+          "selfScore": 0,
+          "code": "II.3",
+          "title": "Kiểm soát quy định TTHC (Có kiến nghị sửa đổi, bổ sung VBQPPL quy định TTHC)",
+          "evidenceList": [],
+          "status": "not_started",
+          "maxScore": 1,
+          "id": "II.3",
+          "department": "Tư pháp & Văn phòng",
+          "scoringGuide": "Có kiến nghị cải cách TTHC: 0,5 điểm; Được cơ quan ban ngành đồng ý sửa đổi: 0,5 điểm."
+        }
+      ],
+      "id": "II",
+      "type": "base",
+      "maxScore": 4,
+      "title": "CẢI CÁCH THỂ CHẾ",
+      "romanNumeral": "II"
+    },
+    {
+      "type": "base",
+      "id": "III",
+      "romanNumeral": "III",
+      "maxScore": 11,
+      "title": "CẢI CÁCH THỦ TỤC HÀNH CHÍNH",
+      "criteria": [
+        {
+          "id": "III.1.a",
+          "code": "III.1.a",
+          "title": "Báo cáo liên quan đến hoạt động kiểm soát TTHC: Đầy đủ số lượng và đúng thời hạn",
+          "selfScore": 0,
+          "maxScore": 0.5,
+          "status": "not_started",
+          "scoringGuide": "Báo cáo đúng hạn: 0,5 điểm. Thiếu hoặc trễ 03 ngày làm việc mỗi báo cáo trừ nửa số điểm.",
+          "evidenceList": [],
+          "department": "Bộ phận Tiếp nhận và Trả kết quả"
+        },
+        {
+          "department": "Bộ phận Tiếp nhận và Trả kết quả",
+          "id": "III.1.b",
+          "code": "III.1.b",
+          "maxScore": 0.5,
+          "evidenceList": [],
+          "selfScore": 0,
+          "title": "Báo cáo kiểm soát TTHC: Đầy đủ các nội dung theo mẫu yêu cầu",
+          "status": "not_started",
+          "scoringGuide": "Đầy đủ nội dung theo mẫu: 0,5 điểm. Thiếu mỗi nội dung trừ nửa số điểm."
+        },
+        {
+          "id": "III.2",
+          "scoringGuide": "Từ 98% - 100%: 2 điểm; Từ 95% - <98%: 1,5 điểm; Từ 90% - <95%: 1 điểm; Dưới 90%: 0 điểm.",
+          "status": "not_started",
+          "evidenceList": [],
+          "code": "III.2",
+          "maxScore": 2,
+          "department": "Bộ phận Tiếp nhận và Trả kết quả",
+          "title": "Cơ chế một cửa: Tỷ lệ hồ sơ TTHC tiếp nhận trong năm được giải quyết đúng hạn",
+          "selfScore": 0
+        },
+        {
+          "department": "Văn phòng - Thống kê",
+          "evidenceList": [],
+          "status": "not_started",
+          "code": "III.3.a",
+          "scoringGuide": "Tính điểm theo công thức: (b/a)*điểm tối đa. Trả lời đầy đủ 100% kiến nghị.",
+          "selfScore": 0,
+          "id": "III.3.a",
+          "title": "Tiếp nhận, xử lý phản ánh, kiến nghị (PAKN) của cá nhân, tổ chức thuộc thẩm quyền",
+          "maxScore": 1
+        },
+        {
+          "code": "III.3.b",
+          "status": "not_started",
+          "title": "Công khai kết quả trả lời PAKN của cá nhân, tổ chức thuộc thẩm quyền",
+          "department": "Văn phòng - Thống kê",
+          "selfScore": 0,
+          "scoringGuide": "100% số PAKN được xử lý và công khai theo quy định: 1 điểm; 80% đến <100%: 0,5 điểm; Dưới 80%: 0 điểm.",
+          "evidenceList": [],
+          "id": "III.3.b",
+          "maxScore": 1
+        },
+        {
+          "department": "Văn phòng - Thống kê",
+          "id": "III.4.a",
+          "title": "Kế hoạch khảo sát hài lòng trực tuyến tại khaosathailong.danang.gov.vn",
+          "maxScore": 1,
+          "scoringGuide": "Có xây dựng kế hoạch thực hiện khảo sát đảm bảo các nội dung theo tiêu chí: 1 điểm; Không ban hành: 0 điểm.",
+          "status": "not_started",
+          "code": "III.4.a",
+          "evidenceList": [],
+          "selfScore": 0
+        },
+        {
+          "selfScore": 0,
+          "code": "III.4.b",
+          "department": "Văn phòng - Thống kê",
+          "title": "Kết quả đánh giá khảo sát hài lòng trực tuyến của tổ chức, công dân",
+          "scoringGuide": "Đảm bảo tỷ lệ theo quy định khung khảo sát: 1,5 điểm; Tỷ lệ đạt từ 50%: 0,5 điểm. Tỷ lệ phúc tra dưới 20%.",
+          "status": "not_started",
+          "maxScore": 1.5,
+          "id": "III.4.b",
+          "evidenceList": []
+        },
+        {
+          "scoringGuide": "Khảo sát 01 lĩnh vực: 1 điểm; Khảo sát từ 02 lĩnh vực trở lên: 2 điểm. Tạo mã QR trên hệ thống thành phố.",
+          "selfScore": 0,
+          "title": "Tổ chức khảo sát độc lập mức độ hài lòng đối với TTHC có số lượng hồ sơ lớn",
+          "department": "Tư pháp & Địa chính",
+          "code": "III.4.c",
+          "id": "III.4.c",
+          "evidenceList": [],
+          "status": "not_started",
+          "maxScore": 2
+        },
+        {
+          "code": "III.4.d",
+          "status": "not_started",
+          "id": "III.4.d",
+          "department": "Ban Chỉ đạo CCHC phường",
+          "scoringGuide": "Báo cáo đầy đủ 3 nội dung (trực tuyến, chuyên ngành, độc lập TP), chỉ rõ tồn tại và giải pháp: 1,5 điểm.",
+          "selfScore": 0,
+          "evidenceList": [],
+          "maxScore": 1.5,
+          "title": "Đánh giá kết quả khảo sát và đề xuất giải pháp cải thiện dịch vụ hành chính công"
+        }
+      ]
+    },
+    {
+      "criteria": [
+        {
+          "department": "Văn phòng - Thống kê",
+          "id": "IV.1",
+          "status": "not_started",
+          "selfScore": 0,
+          "code": "IV.1",
+          "evidenceList": [],
+          "title": "Sắp xếp, kiện toàn tổ chức bộ máy, chức năng nhiệm vụ, quyền hạn cơ quan",
+          "scoringGuide": "Kịp thời, đúng quy định: 1 điểm; Không kịp thời: 0 điểm.",
+          "maxScore": 1
+        },
+        {
+          "title": "Thực hiện quy định về sử dụng biên chế hành chính không vượt chỉ tiêu",
+          "id": "IV.2.a",
+          "status": "not_started",
+          "selfScore": 0,
+          "maxScore": 1,
+          "scoringGuide": "Sử dụng không vượt quá số lượng biên chế hành chính được giao: 1 điểm; Vượt: 0 điểm.",
+          "evidenceList": [],
+          "department": "Văn phòng - Thống kê",
+          "code": "IV.2.a"
+        },
+        {
+          "evidenceList": [],
+          "status": "not_started",
+          "title": "Thực hiện quy định người làm việc hưởng lương NSNN trong đơn vị sự nghiệp",
+          "scoringGuide": "Sử dụng không vượt quá số lượng được giao: 1 điểm; Vượt: 0 điểm.",
+          "code": "IV.2.b",
+          "selfScore": 0,
+          "department": "Văn phòng - Thống kê",
+          "maxScore": 1,
+          "id": "IV.2.b"
+        },
+        {
+          "id": "IV.3",
+          "title": "Thực hiện đúng 100% quy định về cơ cấu số lượng lãnh đạo UBND cấp xã",
+          "department": "Văn phòng - Thống kê",
+          "maxScore": 1,
+          "status": "not_started",
+          "scoringGuide": "Thực hiện đúng 100% quy định cơ cấu lãnh đạo UBND cấp xã: 1 điểm.",
+          "evidenceList": [],
+          "selfScore": 0,
+          "code": "IV.3"
+        },
+        {
+          "id": "IV.4.a",
+          "status": "not_started",
+          "department": "Văn phòng & Tư pháp",
+          "code": "IV.4.a",
+          "evidenceList": [],
+          "selfScore": 0,
+          "maxScore": 2,
+          "title": "Thực hiện phân cấp, ủy quyền trong qu���n lý nhà nước theo đúng quy định",
+          "scoringGuide": "Văn bản đề xuất (0,5đ) + Được phê duyệt Quyết định (0,5đ) + Thực hiện phân cấp ủy quyền cho CC (1,0đ)"
+        },
+        {
+          "status": "not_started",
+          "id": "IV.4.b",
+          "selfScore": 0,
+          "title": "Kiểm tra thực tế các nhiệm vụ đã phân cấp, ủy quyền quản lý nhà nước",
+          "code": "IV.4.b",
+          "evidenceList": [],
+          "department": "Tổ Kiểm tra Công vụ",
+          "maxScore": 1,
+          "scoringGuide": "Có tiến hành kiểm tra đánh giá trên thực tế: 1 điểm; Không thực hiện: 0 điểm."
+        },
+        {
+          "id": "IV.4.c",
+          "evidenceList": [],
+          "code": "IV.4.c",
+          "scoringGuide": "Thực hiện báo cáo đảm bảo thời gian, yêu cầu: 1 điểm.",
+          "selfScore": 0,
+          "department": "Văn phòng - Thống kê",
+          "title": "Báo cáo định kỳ, đột xuất về tình hình phân cấp, ủy quyền",
+          "status": "not_started",
+          "maxScore": 1
+        },
+        {
+          "id": "IV.4.d",
+          "scoringGuide": "100% đơn vị có báo cáo khắc phục tồn tại hạn chế: 1 điểm.",
+          "department": "Văn phòng - Thống kê",
+          "code": "IV.4.d",
+          "evidenceList": [],
+          "selfScore": 0,
+          "status": "not_started",
+          "maxScore": 1,
+          "title": "100% đơn vị được kiểm tra có báo cáo khắc phục tồn tại sau kiểm tra phân cấp ủy quyền"
+        }
+      ],
+      "romanNumeral": "IV",
+      "maxScore": 9,
+      "id": "IV",
+      "type": "base",
+      "title": "CẢI CÁCH TỔ CHỨC BỘ MÁY HÀNH CHÍNH"
+    },
+    {
+      "id": "V",
+      "title": "CẢI CÁCH CHẾ ĐỘ CÔNG VỤ",
+      "criteria": [
+        {
+          "selfScore": 0,
+          "status": "not_started",
+          "scoringGuide": "Đầy đủ, kịp thời: 1 điểm; Chưa đầy đủ hoặc chưa kịp thời: 0 điểm.",
+          "id": "V.1.a",
+          "department": "Văn phòng - Thống kê",
+          "code": "V.1.a",
+          "maxScore": 1,
+          "title": "Cập nhật, hoàn thiện quy định về vị trí việc làm cơ quan thuộc phạm vi quản lý",
+          "evidenceList": []
+        },
+        {
+          "title": "Tỷ lệ bố trí công chức theo đúng đề án vị trí việc làm được phê duyệt",
+          "scoringGuide": "100% số vị trí bố trí đúng: 0,5 điểm; Dưới 100%: 0 điểm.",
+          "evidenceList": [],
+          "selfScore": 0,
+          "code": "V.1.b",
+          "id": "V.1.b",
+          "status": "not_started",
+          "maxScore": 0.5,
+          "department": "Văn phòng - Thống kê"
+        },
+        {
+          "maxScore": 0.5,
+          "status": "not_started",
+          "code": "V.1.c",
+          "title": "Tỷ lệ bố trí viên chức theo đúng vị trí việc làm phê duyệt",
+          "department": "Văn phòng - Thống kê",
+          "evidenceList": [],
+          "scoringGuide": "100% bố trí đúng: 0,5 điểm; Dưới 100%: 0 điểm.",
+          "selfScore": 0,
+          "id": "V.1.c"
+        },
+        {
+          "evidenceList": [],
+          "id": "V.2",
+          "status": "not_started",
+          "code": "V.2",
+          "scoringGuide": "100% lãnh đạo bổ nhiệm đúng tiêu chuẩn: 1 điểm.",
+          "selfScore": 0,
+          "department": "Văn phòng - Thống kê",
+          "title": "Quy định bổ nhiệm vị trí lãnh đạo đúng điều kiện, tiêu chuẩn",
+          "maxScore": 1
+        },
+        {
+          "code": "V.3.a",
+          "scoringGuide": "Xây dựng kế hoạch đúng quy định, kịp thời: 1 điểm.",
+          "evidenceList": [],
+          "maxScore": 1,
+          "title": "Xây dựng kế hoạch đào tạo, bồi dưỡng cán bộ, công chức hằng năm",
+          "department": "Văn phòng - Thống kê",
+          "id": "V.3.a",
+          "status": "not_started",
+          "selfScore": 0
+        },
+        {
+          "code": "V.3.b",
+          "scoringGuide": "Hoàn thành 100% kế hoạch: 1 điểm; Không đạt: 0 điểm.",
+          "evidenceList": [],
+          "department": "Văn phòng - Thống kê",
+          "title": "Mức độ hoàn thành kế hoạch đào tạo, bồi dưỡng công chức, viên chức",
+          "maxScore": 1,
+          "status": "not_started",
+          "id": "V.3.b",
+          "selfScore": 0
+        },
+        {
+          "scoringGuide": "Người đứng đầu không vi phạm (0,5đ) + Lãnh đạo cấp phòng không vi phạm (0,5đ) + Công chức không giữ chức vụ không vi phạm (0,5đ)",
+          "title": "Chấp hành kỷ luật, kỷ cương hành chính (Không có CBCCVC bị xử lý kỷ luật)",
+          "selfScore": 0,
+          "code": "V.4",
+          "maxScore": 1.5,
+          "department": "Văn phòng - Thống kê",
+          "evidenceList": [],
+          "status": "not_started",
+          "id": "V.4"
+        },
+        {
+          "department": "Văn phòng - Thống kê",
+          "scoringGuide": "100% hồ sơ CBCCVC được cập nhật kịp thời, đầy đủ thông tin và xác thực: 2 điểm; 80% đến <100%: Tỷ lệ % * 1 điểm; Dưới 80%: 0 điểm.",
+          "maxScore": 2,
+          "id": "V.5",
+          "title": "Cập nhật đầy đủ và kịp thời thông tin trên Phần mềm Quản lý hồ sơ CBCCVC",
+          "selfScore": 0,
+          "code": "V.5",
+          "status": "not_started",
+          "evidenceList": []
+        },
+        {
+          "title": "Đánh giá kết quả làm việc của công chức hàng tháng trên phần mềm thành phố",
+          "evidenceList": [],
+          "scoringGuide": "Triển khai đầy đủ và đúng thời gian: 2 điểm. Có 01 tháng trễ/thiếu: 1 điểm; >1 tháng: 0 điểm. (Tránh chấm đều Mức Tốt)",
+          "maxScore": 2,
+          "department": "Văn phòng - Thống kê",
+          "code": "V.6.a",
+          "id": "V.6.a",
+          "status": "not_started",
+          "selfScore": 0
+        },
+        {
+          "maxScore": 1.5,
+          "department": "Văn phòng - Thống kê",
+          "evidenceList": [],
+          "scoringGuide": "Đánh giá xếp loại cuối năm đầy đủ đúng hạn căn cứ phần mềm: 1,5 điểm.",
+          "code": "V.6.b",
+          "title": "Đánh giá xếp loại chất lượng cuối năm có sử dụng kết quả hàng tháng xuất từ phần mềm",
+          "id": "V.6.b",
+          "status": "not_started",
+          "selfScore": 0
+        }
+      ],
+      "type": "base",
+      "romanNumeral": "V",
+      "maxScore": 12
+    },
+    {
+      "romanNumeral": "VI",
+      "maxScore": 9,
+      "title": "CẢI CÁCH TÀI CHÍNH CÔNG",
+      "id": "VI",
+      "criteria": [
+        {
+          "code": "VI.1",
+          "maxScore": 1,
+          "selfScore": 0,
+          "title": "Lập dự toán ngân sách hằng năm đúng thời gian và biểu mẫu quy định",
+          "id": "VI.1",
+          "evidenceList": [],
+          "status": "not_started",
+          "department": "Tài chính - Kế toán",
+          "scoringGuide": "Đảm bảo thời gian và biểu mẫu: 1 điểm; Chưa đảm bảo thời gian hoặc thiếu biểu mẫu: 0,5 điểm."
+        },
+        {
+          "id": "VI.2.a",
+          "scoringGuide": "Thực hiện phân bổ đầy đủ biểu mẫu và đúng thời gian quy định: 1 điểm.",
+          "department": "Tài chính - Kế toán",
+          "status": "not_started",
+          "evidenceList": [],
+          "maxScore": 1,
+          "code": "VI.2.a",
+          "selfScore": 0,
+          "title": "Phân bổ và giao dự toán ngân sách cho các đơn vị trực thuộc đầy đủ, đúng hạn"
+        },
+        {
+          "maxScore": 1,
+          "evidenceList": [],
+          "code": "VI.2.b",
+          "selfScore": 0,
+          "id": "VI.2.b",
+          "scoringGuide": "Đúng thời gian, biểu mẫu theo quy định: 1 điểm.",
+          "department": "Tài chính - Kế toán",
+          "status": "not_started",
+          "title": "Lập và nộp báo cáo quyết toán năm trước liền kề đúng thời gian, biểu mẫu"
+        },
+        {
+          "department": "Tài chính - Kế toán",
+          "code": "VI.2.c",
+          "status": "not_started",
+          "maxScore": 1,
+          "id": "VI.2.c",
+          "evidenceList": [],
+          "selfScore": 0,
+          "scoringGuide": "Đúng thời gian, biểu mẫu theo quy định: 1 điểm.",
+          "title": "Lập và nộp báo cáo quyết toán các chế độ chính sách an sinh xã hội"
+        },
+        {
+          "title": "Thực hiện cơ chế tự chủ, tự chịu trách nhiệm và Quy chế chi tiêu nội bộ",
+          "maxScore": 2,
+          "evidenceList": [],
+          "department": "Tài chính - Kế toán",
+          "id": "VI.3",
+          "scoringGuide": "Báo cáo tự chủ biên chế kinh phí (1,0đ) + 100% đơn vị ban hành Quy chế chi tiêu nội bộ (1,0đ)",
+          "status": "not_started",
+          "code": "VI.3",
+          "selfScore": 0
+        },
+        {
+          "department": "Tài chính - Kế toán",
+          "status": "not_started",
+          "title": "Tình hình công khai ngân sách cấp xã và báo cáo công khai dự toán, quyết toán",
+          "maxScore": 2,
+          "scoringGuide": "Công khai ngân sách đúng biểu mẫu thời gian (1,0đ) + Báo cáo tình hình thực hiện công khai (1,0đ)",
+          "code": "VI.4",
+          "evidenceList": [],
+          "id": "VI.4",
+          "selfScore": 0
+        },
+        {
+          "department": "Tài chính - Kế toán",
+          "scoringGuide": "Đạt tỷ lệ 100% chỉ tiêu thành phố giao: 1 điểm; Đạt từ 80% đến <100%: 0,5 điểm; Dưới 80%: 0 điểm.",
+          "selfScore": 0,
+          "evidenceList": [],
+          "code": "VI.5",
+          "id": "VI.5",
+          "maxScore": 1,
+          "title": "Thực hiện thu ngân sách Nhà nước theo chỉ tiêu thành phố giao",
+          "status": "not_started"
+        }
+      ],
+      "type": "base"
+    },
+    {
+      "romanNumeral": "VII",
+      "type": "base",
+      "maxScore": 20,
+      "title": "CHUYỂN ĐỔI SỐ TRONG CƠ QUAN NHÀ NƯỚC",
+      "id": "VII",
+      "criteria": [
+        {
+          "selfScore": 0,
+          "id": "VII.1.a",
+          "scoringGuide": "Đạt 100%: 1 điểm; Dưới 100%: Tỷ lệ % * 1 điểm. (Kiểm tra xác suất ít nhất 50 văn bản).",
+          "evidenceList": [],
+          "title": "Tỷ lệ văn bản đến quét từ bản giấy lên QLVBĐH có chữ ký số cơ quan",
+          "department": "Văn phòng - Thống kê",
+          "code": "VII.1.a",
+          "status": "not_started",
+          "maxScore": 1
+        },
+        {
+          "department": "Văn phòng - Thống kê",
+          "title": "Tỷ lệ văn bản đi được ký số của Lãnh đạo UBND cấp xã và ký số cơ quan hợp lệ",
+          "id": "VII.1.b",
+          "status": "not_started",
+          "maxScore": 1,
+          "selfScore": 0,
+          "scoringGuide": "Đạt 100%: 1 điểm; Dưới 100%: Tỷ lệ % * 1 điểm. (Kiểm tra xác suất 50 văn bản).",
+          "code": "VII.1.b",
+          "evidenceList": []
+        },
+        {
+          "department": "Các bộ phận chuyên môn",
+          "selfScore": 0,
+          "code": "VII.1.c",
+          "title": "Tỷ lệ văn bản đi được ký số lãnh đạo chuyên môn và ký số cơ quan hợp lệ",
+          "id": "VII.1.c",
+          "status": "not_started",
+          "scoringGuide": "Đạt 100%: 1 điểm; Dưới 100%: Tỷ lệ % * 1 điểm.",
+          "maxScore": 1,
+          "evidenceList": []
+        },
+        {
+          "scoringGuide": "Đạt 100%: 1 điểm; Đạt từ 80% - dưới 100%: 0,5 điểm; Dưới 80%: 0,25 điểm.",
+          "selfScore": 0,
+          "department": "Văn phòng & các bộ phận",
+          "evidenceList": [],
+          "code": "VII.2.a",
+          "id": "VII.2.a",
+          "title": "Tỷ lệ xử lý văn bản, hồ sơ công việc hoàn toàn trên môi trường điện tử",
+          "maxScore": 1,
+          "status": "not_started"
+        },
+        {
+          "id": "VII.2.b",
+          "evidenceList": [],
+          "maxScore": 3,
+          "scoringGuide": "Ứng dụng AI phục vụ CCVC (1,0đ) + AI phục vụ người dân, DN (1,0đ) + AI nâng cao khác (1,0đ). Tự phát triển hoặc sáng tạo triển khai.",
+          "selfScore": 0,
+          "department": "Ban Chỉ đạo CĐS phường",
+          "code": "VII.2.b",
+          "title": "Mức độ ứng dụng Trí tuệ nhân tạo (AI) phục vụ công vụ, người dân và doanh nghiệp",
+          "status": "not_started"
+        },
+        {
+          "selfScore": 0,
+          "evidenceList": [],
+          "title": "Ứng dụng Phần mềm Quản lý văn bản và điều hành (QLVBĐH)",
+          "scoringGuide": "100% VB đến (1đ) + 100% VB đi (1đ) + Bút phê ý kiến của lãnh đạo (1đ) + Đính kèm dự thảo (1đ) + Trên 90% kết nối VB đến/đi (1đ)",
+          "maxScore": 5,
+          "id": "VII.3",
+          "code": "VII.3",
+          "status": "not_started",
+          "department": "Văn phòng - Thống kê"
+        },
+        {
+          "evidenceList": [],
+          "id": "VII.4.a",
+          "title": "Xây dựng mới hoặc nâng cấp phần mềm chuyên ngành phục vụ công tác quản lý",
+          "maxScore": 2,
+          "scoringGuide": "Có xây dựng PM mới hoặc nâng cấp trong năm đánh giá. Cung cấp hồ sơ gồm: Hợp đồng/văn bản, link web, tài khoản, hình ảnh chụp giao diện: 2 điểm.",
+          "code": "VII.4.a",
+          "status": "not_started",
+          "selfScore": 0,
+          "department": "Văn phòng - Thống kê"
+        },
+        {
+          "maxScore": 1,
+          "id": "VII.4.b",
+          "scoringGuide": "Tỷ lệ số hóa hồ sơ từ 80% trở lên: 0,5 điểm; Tỷ lệ khai thác sử dụng lại dữ liệu số hóa từ 30% trở lên: 0,5 điểm.",
+          "evidenceList": [],
+          "selfScore": 0,
+          "code": "VII.4.b",
+          "department": "Bộ phận Tiếp nhận và Trả kết quả",
+          "title": "Triển khai số hóa hồ sơ, kết quả giải quyết TTHC và khai thác sử dụng lại",
+          "status": "not_started"
+        },
+        {
+          "code": "VII.5",
+          "scoringGuide": "Tỷ lệ TTHC có phí được tích hợp trên Cổng DVCQG: 2 điểm; Tỷ lệ hồ sơ thanh toán trực tuyến qua Cổng: 2 điểm.",
+          "department": "Bộ phận Tiếp nhận và Trả kết quả",
+          "maxScore": 4,
+          "status": "not_started",
+          "evidenceList": [],
+          "id": "VII.5",
+          "title": "Thực hiện thanh toán trực tuyến phí, lệ phí trên Cổng Dịch vụ công",
+          "selfScore": 0
+        },
+        {
+          "title": "Triển khai camera giám sát tại Bộ phận Một cửa và tích hợp về Trung tâm IOC",
+          "evidenceList": [],
+          "id": "VII.6",
+          "scoringGuide": "Có triển khai camera: 0,5 điểm; Tích hợp dữ liệu camera trực tiếp về Trung tâm IOC thành phố: 0,5 điểm.",
+          "maxScore": 1,
+          "status": "not_started",
+          "selfScore": 0,
+          "department": "Văn phòng - Thống kê",
+          "code": "VII.6"
+        }
+      ]
+    },
+    {
+      "id": "VIII",
+      "romanNumeral": "VIII",
+      "maxScore": 8,
+      "type": "base",
+      "criteria": [
+        {
+          "id": "VIII.1",
+          "code": "VIII.1",
+          "selfScore": 0,
+          "department": "UBND Phường Hội An Đông",
+          "scoringGuide": "Chỉ số hài lòng tiếp cận (1đ) + Giải quyết TTHC (1đ) + Công chức giải quyết (1đ) + Xử lý PAKN (2đ). Tính theo tỷ lệ hài lòng Sở Nội vụ công bố.",
+          "maxScore": 5,
+          "status": "not_started",
+          "title": "Kết quả điều tra khảo sát của Sở Nội vụ (Chỉ số hài lòng SIPAS)",
+          "evidenceList": []
+        },
+        {
+          "maxScore": 1,
+          "id": "VIII.2",
+          "department": "Tư pháp - Hộ tịch",
+          "code": "VIII.2",
+          "title": "Tác động của cải cách đến chất lượng VBQPPL do đơn vị ban hành",
+          "selfScore": 0,
+          "evidenceList": [],
+          "status": "not_started",
+          "scoringGuide": "Đánh giá tác động tích cực đến chất lượng ban hành văn bản quy phạm pháp luật: 1 điểm"
+        },
+        {
+          "department": "Văn phòng - Thống kê",
+          "code": "VIII.3",
+          "title": "Tác động của cải cách đến tổ chức bộ máy hành chính",
+          "status": "not_started",
+          "selfScore": 0,
+          "scoringGuide": "Đánh giá tác động tinh gọn, hiệu lực, hiệu quả tổ chức bộ máy: 1 điểm",
+          "id": "VIII.3",
+          "evidenceList": [],
+          "maxScore": 1
+        },
+        {
+          "id": "VIII.4",
+          "scoringGuide": "Mức độ hiện đại hóa nền hành chính và phục vụ nhân dân: 1 điểm",
+          "evidenceList": [],
+          "department": "Ban Chỉ đạo CCHC",
+          "selfScore": 0,
+          "maxScore": 1,
+          "title": "Tác động của cải cách đến hiện đại hóa nền hành chính",
+          "code": "VIII.4",
+          "status": "not_started"
+        }
+      ],
+      "title": "HIỆU QUẢ TÁC ĐỘNG CỦA CÔNG TÁC CẢI CÁCH HÀNH CHÍNH"
+    },
+    {
+      "id": "IX_BONUS",
+      "title": "ĐIỂM THƯỞNG (Tối đa +10 điểm)",
+      "maxScore": 10,
+      "type": "bonus",
+      "romanNumeral": "IX.1",
+      "criteria": [
+        {
+          "department": "Lãnh đạo UBND phường",
+          "selfScore": 0,
+          "status": "not_started",
+          "scoringGuide": "Hội đủ 3 nội dung: Có Kế hoạch & giấy mời + Văn bản thông báo kết luận đối thoại + Báo cáo triển khai của các đơn vị: 1 điểm.",
+          "code": "IX.1.a",
+          "id": "IX.1.a",
+          "title": "Tổ chức diễn đàn, đối thoại, Ngày hội gặp gỡ Lãnh đạo UBND với người dân và doanh nghiệp",
+          "maxScore": 1,
+          "evidenceList": []
+        },
+        {
+          "id": "IX.1.b",
+          "code": "IX.1.b",
+          "department": "UBND Phường Hội An Đông",
+          "title": "Có sáng kiến được Hội đồng xét sáng kiến thành phố công nhận",
+          "evidenceList": [],
+          "maxScore": 2,
+          "status": "not_started",
+          "selfScore": 0,
+          "scoringGuide": "Cứ một sáng kiến cấp thành phố cộng 1 điểm, tối đa không quá 2 điểm."
+        },
+        {
+          "status": "not_started",
+          "scoringGuide": "Mỗi nội dung đăng ký thí điểm có hiệu quả thực tế và báo cáo Sở Nội vụ được cộng 1 điểm, tối đa 3 điểm.",
+          "code": "IX.1.c",
+          "selfScore": 0,
+          "evidenceList": [],
+          "title": "Đề xuất và tổ chức thực hiện thí điểm có hiệu quả các nội dung CCHC",
+          "id": "IX.1.c",
+          "maxScore": 3,
+          "department": "UBND Phường Hội An Đông"
+        },
+        {
+          "code": "IX.1.d",
+          "evidenceList": [],
+          "department": "Văn phòng - Thống kê",
+          "selfScore": 0,
+          "maxScore": 1,
+          "status": "not_started",
+          "id": "IX.1.d",
+          "title": "Được UBND thành phố biểu dương tên đơn vị trong văn bản Báo cáo định kỳ",
+          "scoringGuide": "Được UBND thành phố biểu dương tên trong báo cáo giao ban/nhiệm vụ: 1 điểm."
+        },
+        {
+          "scoringGuide": "Duy trì và cải tiến Hệ thống quản lý chất lượng ISO 9001:2015 hiệu lực: 1 điểm.",
+          "code": "IX.1.e",
+          "selfScore": 0,
+          "department": "Ban ISO phường",
+          "status": "not_started",
+          "id": "IX.1.e",
+          "evidenceList": [],
+          "maxScore": 1,
+          "title": "Áp dụng, duy trì và cải tiến Hệ thống Quản lý chất lượng TCVN ISO 9001:2015"
+        },
+        {
+          "maxScore": 2,
+          "scoringGuide": "Top 20 xã phường cao nhất: 2 điểm; Vị trí 21 đến 40: 1 điểm; Vị trí 41 đến 70: 0,5 điểm.",
+          "evidenceList": [],
+          "selfScore": 0,
+          "department": "Tài chính - Kế toán",
+          "title": "Thực hiện thu NSNN thuộc nhóm địa phương cao trong toàn thành phố",
+          "code": "IX.1.f",
+          "status": "not_started",
+          "id": "IX.1.f"
+        }
+      ]
+    },
+    {
+      "maxScore": 10,
+      "type": "penalty",
+      "id": "IX_PENALTY",
+      "title": "ĐIỂM TRỪ (Tối đa -10 điểm)",
+      "criteria": [
+        {
+          "evidenceList": [],
+          "maxScore": 2,
+          "status": "not_started",
+          "scoringGuide": "Không gửi văn bản xin lỗi khi trễ hạn hoặc số liệu kiểm tra không chính xác: trừ 1 đến 2 điểm.",
+          "id": "IX.2.a",
+          "title": "Không tiếp nhận qua Một cửa điện tử / Trễ hạn không có văn bản xin lỗi nhân dân",
+          "department": "Bộ phận Tiếp nhận và Trả kết quả",
+          "selfScore": 0,
+          "code": "IX.2.a"
+        },
+        {
+          "evidenceList": [],
+          "title": "Có cán bộ, công chức hoặc viên chức bị xử lý kỷ luật trong năm",
+          "selfScore": 0,
+          "maxScore": 1,
+          "scoringGuide": "Có CBCCVC bị xử lý kỷ luật: trừ 1 điểm.",
+          "status": "not_started",
+          "code": "IX.2.b",
+          "department": "Văn phòng - Thống kê",
+          "id": "IX.2.b"
+        },
+        {
+          "title": "Không trung thực trong việc đính kèm tài liệu giải trình / báo cáo hồ sơ trễ hạn",
+          "code": "IX.2.c",
+          "status": "not_started",
+          "maxScore": 1,
+          "scoringGuide": "Phát hiện số liệu không trùng khớp hoặc làm giả tài liệu giải trình: trừ 1 điểm.",
+          "department": "Các bộ phận chuyên môn",
+          "selfScore": 0,
+          "id": "IX.2.c",
+          "evidenceList": []
+        },
+        {
+          "code": "IX.2.d",
+          "evidenceList": [],
+          "scoringGuide": "Bị phê bình bằng văn bản: trừ 1 điểm.",
+          "department": "UBND Phường Hội An Đông",
+          "selfScore": 0,
+          "maxScore": 1,
+          "id": "IX.2.d",
+          "status": "not_started",
+          "title": "Bị Lãnh đạo UBND thành phố phê bình bằng văn bản vì chậm tiến độ"
+        },
+        {
+          "maxScore": 1,
+          "status": "not_started",
+          "scoringGuide": "Bị nhắc nhở đôn đốc CCHC bằng văn bản: trừ 1 điểm.",
+          "selfScore": 0,
+          "title": "Bị Lãnh đạo thành phố nhắc nhở, đôn đốc bằng văn bản liên quan đến CCHC",
+          "id": "IX.2.đ",
+          "evidenceList": [],
+          "code": "IX.2.đ",
+          "department": "UBND Phường Hội An Đông"
+        },
+        {
+          "maxScore": 1,
+          "id": "IX.2.e",
+          "evidenceList": [],
+          "title": "Để cơ quan báo đài phản ánh tiêu cực, tham nhũng gây ảnh hưởng hình ảnh thành phố",
+          "code": "IX.2.e",
+          "department": "UBND Phường Hội An Đông",
+          "scoringGuide": "Báo chí phản ánh đúng sự thật tiêu cực tại địa phương: trừ 1 điểm.",
+          "status": "not_started",
+          "selfScore": 0
+        },
+        {
+          "scoringGuide": "Không triển khai đúng thời gian điều tra XHH: trừ 1 điểm.",
+          "maxScore": 1,
+          "department": "Văn phòng - Thống kê",
+          "selfScore": 0,
+          "id": "IX.2.g",
+          "evidenceList": [],
+          "title": "Không triển khai hoặc chậm trễ việc lấy ý kiến điều tra xã hội học CCHC",
+          "code": "IX.2.g",
+          "status": "not_started"
+        },
+        {
+          "maxScore": 1,
+          "code": "IX.2.h",
+          "id": "IX.2.h",
+          "scoringGuide": "Chưa thực hiện đầy đủ chữ ký số cá nhân: trừ 1 điểm.",
+          "department": "Văn phòng - Thống kê",
+          "evidenceList": [],
+          "status": "not_started",
+          "title": "Chưa thực hiện đầy đủ chữ ký số của Lãnh đạo UBND phường",
+          "selfScore": 0
+        },
+        {
+          "status": "not_started",
+          "id": "IX.2.i",
+          "department": "Văn phòng - Thống kê",
+          "maxScore": 1,
+          "code": "IX.2.i",
+          "evidenceList": [],
+          "title": "Không đảm bảo thời gian, nội dung báo cáo theo yêu cầu Sở Nội vụ / BCĐ CCHC",
+          "selfScore": 0,
+          "scoringGuide": "Trễ hạn hoặc nội dung không đạt yêu cầu: trừ 1 điểm."
+        }
+      ],
+      "romanNumeral": "IX.2"
+    }
+  ],
+  "updatedBy": "UBND Phường Hội An Đông",
+  "changeLog": [
+    {
+      "id": "log-1792229794687-3m62",
+      "timestamp": "16:36:34",
+      "criterionCode": "I.1.a",
+      "criterionTitle": "Kế hoạch CCHC giai đoạn 2026-2030: Ban hành đúng thời gian quy định",
+      "action": "Cập nhật tiến độ & minh chứng",
+      "oldScore": 0.5,
+      "newScore": 0.5,
+      "oldStatus": "completed",
+      "newStatus": "completed",
+      "note": "Cập nhật tiến độ: completed",
+      "updatedBy": "UBND Phường Hội An Đông",
+      "driveSynced": false
+    },
+    {
+      "criterionTitle": "Kế hoạch CCHC giai đoạn 2026-2030: Ban hành đúng thời gian quy định",
+      "oldScore": 0.5,
+      "updatedBy": "UBND Phường Hội An Đông",
+      "oldStatus": "completed",
+      "action": "Cập nhật tiến độ & minh chứng",
+      "note": "Cập nhật tiến độ: completed",
+      "newStatus": "completed",
+      "timestamp": "14:50:37",
+      "criterionCode": "I.1.a",
+      "newScore": 0.5,
+      "id": "log-1792223437586-2rj5",
+      "driveSynced": false
+    },
+    {
+      "timestamp": "00:02:16",
+      "criterionCode": "I.1.a",
+      "newStatus": "completed",
+      "newScore": 0.5,
+      "updatedBy": "UBND Phường Hội An Đông",
+      "oldStatus": "not_started",
+      "action": "Cập nhật tiến độ & minh chứng",
+      "note": "Cập nhật tiến độ: completed",
+      "driveSynced": true,
+      "oldScore": 0,
+      "id": "log-1792108936060-lm0f",
+      "criterionTitle": "Kế hoạch CCHC giai đoạn 2026-2030: Ban hành đúng thời gian quy định"
+    }
+  ]
+}
